@@ -1,0 +1,162 @@
+generator client {
+  output = "../node_modules/.prisma/client"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  }
+
+model test {
+  id String @id @unique @default(uuid())
+}
+
+model user {
+  id                 String            @id @default(uuid())
+  email              String            @unique
+  password           String            // Recomendo renomear para hashedPassword
+  firstName          String
+  lastName           String
+  bio                String?
+  profilePictureUrl  String?
+  imoveis            imovel[]
+  recoveryEmail      String?           @unique
+  recoveryPhone      String?           @unique
+  metadata           accountMetadata[] @relation("UserMetadata")
+  
+  // Timestamps adicionais para controle
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  // Índices para performance
+  @@index([email])
+  @@index([createdAt])
+}
+
+model accountMetadata {
+  id                  String           @id @default(uuid())
+  user                user             @relation("UserMetadata", fields: [userId], references: [id], onDelete: Cascade)
+  userId              String           @unique // Relação 1:1 (cada user tem apenas 1 metadata)
+  
+  // Autenticação
+  emailVerified       Boolean          @default(false)
+  twoFactorEnabled    Boolean          @default(false)
+  twoFactorSecret     String?          // Armazenar criptografado se usar TOTP
+  
+  // Rastreamento
+  registrationIp      String?          @db.VarChar(45)  // IPv4/IPv6
+  registrationDevice  String?          @db.VarChar(512) // User-Agent completo
+  deviceHash          String?          @unique // Hash do dispositivo para identificação anônima
+  
+  // Atividades
+  lastLogin           DateTime?
+  lastLoginIp         String?          @db.VarChar(45)
+  loginCount          Int              @default(0)
+  failedLoginAttempts Int              @default(0)
+  
+  // Controle de versão
+  profileVersion      Int              @default(1)
+  
+  // Timestamps
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // Segurança
+  accountLockedUntil  DateTime?        // Bloqueio após muitas tentativas
+
+  // Índices
+  @@index([userId])
+  @@index([createdAt])
+  @@index([lastLogin])
+}
+
+
+model imovel {  
+  id        String   @id  @unique
+  title     String
+  postedAt  DateTime @default(now())
+  lastUpdate DateTime @updatedAt
+  textDescription String
+
+
+  log	String
+  street    String
+  estate    String
+  city      String
+  CEP       String
+
+
+
+
+  price     Float     
+  IPTU      Float
+  
+
+  rooms     Int      
+  bathrooms Int      
+  garage    Int 
+  bedrooms Int  
+  floors Int
+  age Int
+  stage Int
+
+
+  furnished Boolean
+  pool Boolean
+  gym Boolean
+  security Boolean
+  elevator Boolean
+  accessible Boolean
+  balcony Boolean
+  garden Boolean
+  barbecueArea Boolean
+  solarEnergy Boolean
+  library Boolean
+  wineCellar Boolean
+  airConditioning Boolean
+  smartHome Boolean
+  laundryRoom Boolean
+  gatedCommunity Boolean
+  alarmSystem Boolean
+  surveillanceCameras Boolean
+  fingerprintAccess Boolean
+  solarPanels Boolean
+  chargingStation Boolean
+  partyRoom Boolean
+  guestParking Boolean
+  petArea Boolean
+  bikeRack Boolean
+  coWorkingSpace Boolean
+  petFriendly Boolean
+
+
+  area Int  
+  built Int
+
+
+
+  views Int
+  isActive Boolean
+  isFeatured Boolean
+
+
+  
+  user      user     @relation(fields: [userId], references: [id],onDelete: Cascade)
+  userId    String
+
+
+  imovelImages imovelImages[]
+}
+
+
+model imovelImages {
+  id String @id @unique 
+  imageUrl String
+
+ imovelId String
+
+ imovel imovel @relation(fields: [imovelId],references: [id],onDelete: Cascade)
+
+}
