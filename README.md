@@ -1,6 +1,7 @@
 
 Basic .env structure file for backend/docker-compose 
 
+```
 #URI
 DATABASE_URL="postgresql://docker:docker@docker-service-name:5432/db-name?schema=public"
 
@@ -21,3 +22,4 @@ JWT_ADM_SECRET=YOUR-JWT-SECRET
 
 
 JWT_VERIFY_CODE=YOUR-JWT-SECRET
+``` 
