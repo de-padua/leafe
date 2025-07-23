@@ -36,4 +36,29 @@ export class EmailVerificationController {
       },
     };
   }
+
+  @Get(':code')
+  @UseGuards(AuthGuard)
+  async verifyEmail(
+    @Req() request: CustomRequestWithId,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (!request.id) return HttpStatus.UNAUTHORIZED;
+
+    const userId = request.id;
+    const verificationCode = request.params['code'];
+
+    const emailValidationResponse =
+      await this.EmailVerificationService.validateEmailVerificationCode(
+        userId,
+        verificationCode,
+      );
+
+    response.cookie(
+      'accessToken',
+      emailValidationResponse.data.accountAccessToken,
+    );
+
+    return emailValidationResponse.data.userData
+  }
 }
