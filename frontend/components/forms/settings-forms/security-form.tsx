@@ -77,11 +77,14 @@ import EmailVerification from "./email-verification";
 import RecoveryEmail from "./recovery-email";
 
 function SecurityForm({ userData }: { userData: User }) {
+  userData.metadata[0].emailVerified = true;
+    userData.metadata[0].twoFactorEnabled = true;
+
   const sub_menu_account_protect = [
     {
       id: "1",
       icon: userData.recoveryEmail ? (
-        <Mail className="w-5 h-5 text-green-300" />
+        <Mail className="w-5 h-5 text-green-200" />
       ) : (
         <Mail className="w-5 h-5 text-amber-500" />
       ),
@@ -148,13 +151,16 @@ function SecurityForm({ userData }: { userData: User }) {
     {
       id: "1",
       icon: userData.metadata[0].emailVerified ? (
-        <Mail className="w-5 h-5 text-green-300" />
+        <Mail className="w-5 h-5 text-green-200" />
       ) : (
         <Mail className="w-5 h-5 text-amber-500" />
       ),
       title: "Verificação de email",
       subicon: userData.metadata[0].emailVerified ? (
-        ""
+        <Badge className="bg-green-600/10 dark:bg-green-600/20 hover:bg-green-600/10 text-green-500 border-green-600/60 shadow-none rounded-full">
+          {" "}
+          Segura <Shield />
+        </Badge>
       ) : (
         <Badge className="bg-amber-600/10 dark:bg-amber-600/20 hover:bg-amber-600/10 text-amber-500 border-amber-600/60 shadow-none rounded-full">
           {" "}

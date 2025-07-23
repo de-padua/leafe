@@ -47,7 +47,7 @@ function ChangePassowordForm({ userData }: { userData: User }) {
     setTimeout(async () => {
       try {
         const response = await fetch("http://localhost:5000/users/credential", {
-          method: "PATCH",
+          method: "PUT",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
@@ -63,13 +63,11 @@ function ChangePassowordForm({ userData }: { userData: User }) {
         if (!response.ok) {
           throw new Error(data.message);
         }
-
+        set(data);
         form.control._disableForm(false);
-
         form.reset();
         setPassword("");
         setLoading(false);
-        set(data);
         toast.success("Senha atualizada com sucesso.");
 
         return data;
@@ -81,9 +79,11 @@ function ChangePassowordForm({ userData }: { userData: User }) {
             message: "Senha antiga não esta correta.",
           });
         }
+
+        console.log(error);
         setLoading(false);
       }
-    }, 10000);
+    }, 1000);
   }
 
   const [password, setPassword] = useState("");
@@ -145,7 +145,10 @@ function ChangePassowordForm({ userData }: { userData: User }) {
             </div>
           </div>
 
-           <Button disabled > <Loader className="animate-spin"/> </Button>
+          <Button disabled>
+            {" "}
+            <Loader className="animate-spin" />{" "}
+          </Button>
         </div>
       ) : (
         <Form {...form}>

@@ -111,7 +111,6 @@ import { MorphingText } from "../magicui/morphing-text";
 import { AnimatedCircularProgressBar } from "../magicui/animated-circular-progress-bar";
 import Logo from "../custom/logo";
 
-
 interface formErrorData {
   formError: {
     formName: string;
@@ -223,7 +222,7 @@ function SingupMulti() {
     return update.json();
   };
 
-  const createUser = async (values: Partial<FormData>)  => {
+  const createUser = async (values: Partial<FormData>) => {
     try {
       const data = await fetch("http://localhost:5000/users", {
         method: "POST",
@@ -243,7 +242,6 @@ function SingupMulti() {
 
       const response = await data.json();
 
-
       if (!data.ok) {
         if (response.message === "Conflict") {
           setFormErrorData({
@@ -257,7 +255,7 @@ function SingupMulti() {
         throw new Error("Conflict");
       }
 
-      return response ;
+      return response;
     } catch (err) {
       throw err;
     }
@@ -265,12 +263,11 @@ function SingupMulti() {
   async function onSubmit() {
     setLoading(true);
     try {
-
-      const {preferences,...data} = formData
+      const { preferences, ...data } = formData;
 
       const newUserData = await createUser(data);
 
-      console.log(newUserData)
+      console.log(newUserData);
 
       /* const pictureUrl = await uploadPicture(newUserData.token, newUserData.id);
 
@@ -283,14 +280,20 @@ function SingupMulti() {
         router.push("/");
       } */
 
-
       if (newUserData) {
         queryClient.setQueryData(["userData"], newUserData);
         router.push("/");
       }
     } catch (err) {
       if (err.message === "Conflict") {
-        console.log(err);
+        setLoading(false);
+        setFormErrorData({
+          formError: {
+            formName: "email",
+            formMessage: "Email invalido,tente outro novamente.",
+          },
+        });
+        setCurrentStep(0)
       }
       if (err.message === "ImageUploadError") {
         console.log(err);

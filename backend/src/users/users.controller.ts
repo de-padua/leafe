@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Put,
   Req,
   Res,
   UseGuards,
@@ -45,6 +46,25 @@ export class UsersController {
       userId,
     );
 
+    response.cookie('accessToken', newData.newAccessToken);
+    return newData.newUserData;
+  }
+  @UseGuards(AuthGuard)
+  @Put('/credential')
+  async updateUserCredential(
+    @Body() passwordData:updateUserPasswordDto ,
+    @Req() request: CustomRequestWithId,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (!request.id) return response.status(HttpStatus.UNAUTHORIZED);
+
+    const userId = request.id;
+    const newData = await this.UserService.updateUserPassword(
+      passwordData,
+      userId,
+    );
+
+    console.log(newData)
     response.cookie('accessToken', newData.newAccessToken);
     return newData.newUserData;
   }

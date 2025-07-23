@@ -116,7 +116,6 @@ export class UsersService {
         },
       });
 
-      console.log(currentUser?.password);
       if (!currentUser) throw new NotFoundException();
 
       const isCorrenctPassword = await bcrypt.compare(
@@ -124,7 +123,6 @@ export class UsersService {
         currentUser.password,
       );
 
-      console.log(newDataToUpdate);
       if (isCorrenctPassword === false)
         throw new UnauthorizedException('invalid password');
 
@@ -141,6 +139,9 @@ export class UsersService {
         omit: {
           password: true,
         },
+        include: {
+          metadata: true,
+        },
       });
 
       if (!newDataToUpdate) throw new InternalServerErrorException();
@@ -156,6 +157,4 @@ export class UsersService {
       throw error;
     }
   };
-
-
 }
