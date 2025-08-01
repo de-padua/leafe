@@ -11,6 +11,7 @@ import UserPosts from "@/components/custom/filtro-pesquisa";
 import { useQuery } from "@tanstack/react-query";
 import ProfileCardSkeleton from "@/components/custom/profile-card-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import NotFoundCustom from "@/components/custom/NotFound";
 
 function Page() {
   const params = useParams();
@@ -25,11 +26,11 @@ function Page() {
         },
       });
 
-      // Handle HTTP errors (404, 500, etc.)
+      
       if (!response.ok) {
         if (response.status === 404) {
-          // Return null or undefined instead of throwing
-          return null; // or return null;
+          
+          return null; 
         }
         const errorData = await response.json().catch(() => null);
         throw new Error(
@@ -94,7 +95,9 @@ function Page() {
       </div>
     );
   if (isError) return <div>Error: {error.message}</div>;
-  if (!data) return <div>User not found</div>;
+  if (!data) return <div>
+    <NotFoundCustom />
+  </div>;
 
   return (
     <div className=" flex items-center justify-center flex-col">

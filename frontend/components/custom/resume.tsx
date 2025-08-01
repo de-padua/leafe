@@ -7,9 +7,7 @@ import { Image, ImageMinus } from "lucide-react";
 function Resume() {
   const formState = useFormState();
 
-  useEffect(() => {
-    console.log(formState.form);
-  }, []);
+
   return (
     <div className="w-full h-1/2 p-2">
       <div className="flex items-center justify-center h-full gap-1">

@@ -110,6 +110,8 @@ import { Ripple } from "../magicui/ripple";
 import { MorphingText } from "../magicui/morphing-text";
 import { AnimatedCircularProgressBar } from "../magicui/animated-circular-progress-bar";
 import Logo from "../custom/logo";
+import url from "@/api";
+import { useUserStore } from "@/lib/stores/currentUserStore";
 
 interface formErrorData {
   formError: {
@@ -117,6 +119,7 @@ interface formErrorData {
     formMessage: string;
   };
 }
+
 const formSchema = z.object({
   email: z.string().email({ message: "Email invalido." }),
   password: z
@@ -144,6 +147,8 @@ type FormData = z.infer<typeof formSchema>;
 const steps = [0, 1, 2, 3, 4];
 
 function SingupMulti() {
+  const userStore = useUserStore();
+
   const [formData, setData] = useState<Partial<FormData>>({});
   const [formErrorData, setFormErrorData] = useState<formErrorData | null>(
     null
@@ -224,7 +229,7 @@ function SingupMulti() {
 
   const createUser = async (values: Partial<FormData>) => {
     try {
-      const data = await fetch("http://localhost:5000/users", {
+      const data = await fetch(`${url}/users`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -239,10 +244,10 @@ function SingupMulti() {
           bio: values.bio,
         }),
       });
-
       const response = await data.json();
 
       if (!data.ok) {
+
         if (response.message === "Conflict") {
           setFormErrorData({
             formError: {
@@ -252,10 +257,14 @@ function SingupMulti() {
           });
           setCurrentStep(0);
         }
+
         throw new Error("Conflict");
       }
 
+    
+      console.log(response)
       return response;
+
     } catch (err) {
       throw err;
     }
@@ -266,8 +275,6 @@ function SingupMulti() {
       const { preferences, ...data } = formData;
 
       const newUserData = await createUser(data);
-
-      console.log(newUserData);
 
       /* const pictureUrl = await uploadPicture(newUserData.token, newUserData.id);
 
@@ -280,10 +287,10 @@ function SingupMulti() {
         router.push("/");
       } */
 
-      if (newUserData) {
-        queryClient.setQueryData(["userData"], newUserData);
-        router.push("/");
-      }
+      if (!newUserData) throw new Error();
+
+      queryClient.setQueryData(["userData"], newUserData);
+      router.push("/");
     } catch (err) {
       if (err.message === "Conflict") {
         setLoading(false);
@@ -293,7 +300,7 @@ function SingupMulti() {
             formMessage: "Email invalido,tente outro novamente.",
           },
         });
-        setCurrentStep(0)
+        setCurrentStep(0);
       }
       if (err.message === "ImageUploadError") {
         console.log(err);

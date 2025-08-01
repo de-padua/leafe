@@ -1,6 +1,5 @@
-import { z } from "zod";
-// types/user.ts
-export type User = {
+
+export type User  = {
   id: string;
   email: string;
   password?: string;
@@ -13,9 +12,13 @@ export type User = {
   profilePictureUrl: string;
   bio: string;
   preferences?: "all" | "verified";
-  metadata: AccountMetadata[];
+  metadata: AccountMetadata;
   recoveryEmail: string;
   recoveryPhone: string;
+  lastUpdateOnRecoveryEmail: Date | null;
+  lastUpdateOnPassword: Date | null;
+  isRecoveryCodesGenerated : boolean
+  recoveryCodes: string[]
 };
 
 export type AccountMetadata = {
@@ -101,3 +104,4 @@ export type CreateImovel = Omit<
 >;
 
 export type UpdateImovel = Partial<CreateImovel> & { id: string };
+

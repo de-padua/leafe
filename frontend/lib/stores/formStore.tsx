@@ -49,7 +49,7 @@ export const useFormState = create<formState>()((set) => ({
     photoURLPREVIEW: [],
     photoFiles: [],
   },
-  formStep: 3,
+  formStep: 0,
   setFormStep: () => {
     const nextStep = useFormState.getState().formStep + 1;
     set({ formStep: nextStep });

@@ -36,7 +36,6 @@ export function UserDropDownMenu(props: { data: Partial<User> }) {
   const mutation = useMutation({
     mutationFn: logout,
     onSuccess: (data) => {
-      console.log("logout successful:", data);
       queryClient.invalidateQueries();
     },
     onError: (error) => {

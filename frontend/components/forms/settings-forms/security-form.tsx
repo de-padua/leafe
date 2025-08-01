@@ -75,24 +75,33 @@ import { Badge } from "@/components/ui/badge";
 import ChangePassowordForm from "./change-password-form";
 import EmailVerification from "./email-verification";
 import RecoveryEmail from "./recovery-email";
+import BadgeVerificado from "./badges/verificado";
+import RecoveryCodes from "./recovery-codes";
 
 function SecurityForm({ userData }: { userData: User }) {
+
+
+
   const sub_menu_account_protect = [
     {
       id: "1",
       icon: userData.recoveryEmail ? (
-        <Mail className="w-5 h-5 text-green-200" />
+        <Mail className="w-5 h-5 " />
       ) : (
-        <Mail className="w-5 h-5 text-amber-500" />
+        <Mail className="w-5 h-5" />
       ),
       title: "Email de recuperação",
       subicon: userData.recoveryEmail ? (
-        ""
-      ) : (
-        <Badge className="bg-amber-600/10 dark:bg-amber-600/20 hover:bg-amber-600/10 text-amber-500 border-amber-600/60 shadow-none rounded-full">
+        <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
           {" "}
-          <div className="h-1.5 w-1.5 rounded-full bg-amber-500 mr-2" />{" "}
-          Necessita de atualização
+          <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />
+          Ativo{" "}
+        </Badge>
+      ) : (
+        <Badge className="bg-gray-600/10 dark:bg-gray-600/20 hover:bg-gray-600/10 text-gray-500 shadow-none rounded-full">
+          {" "}
+          <div className="h-1.5 w-1.5 rounded-full bg-gray-500 mr-1" />
+          Pendente{" "}
         </Badge>
       ),
 
@@ -104,62 +113,46 @@ function SecurityForm({ userData }: { userData: User }) {
     },
     {
       id: "2",
-      icon: <ShieldAlert className="w-5 h-5 text-amber-500" />,
+      icon: <ShieldAlert className="w-5 h-5 " />,
       title: "Códigos de Recuperação de Conta",
-      subicon: userData.metadata[0].twoFactorEnabled ? (
-        ""
-      ) : (
-        <Badge className="bg-amber-600/10 dark:bg-amber-600/20 hover:bg-amber-600/10 text-amber-500 border-amber-600/60 shadow-none rounded-full">
+      subicon: userData.isRecoveryCodesGenerated ? (
+        <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
           {" "}
-          <div className="h-1.5 w-1.5 rounded-full bg-amber-500 mr-2" />{" "}
-          Necessita de atualização
+          <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />
+          Ativo{" "}
+        </Badge>
+      ) : (
+        <Badge className="bg-gray-600/10 dark:bg-gray-600/20 hover:bg-gray-600/10 text-gray-500 shadow-none rounded-full">
+          {" "}
+          <div className="h-1.5 w-1.5 rounded-full bg-gray-500 mr-1" />
+          Pendente{" "}
         </Badge>
       ),
       content: (
-        <div className="border px-10 py-5 rounded-md  ">
-          {" "}
-          <div className="rounded-md  border-amber-500/50  py-3 text-amber-600 flex items-center justify-between">
-            <div className="rounded-md border border-amber-500/50 px-4 py-3 text-amber-600">
-              <p className="text-sm">
-                <InfoIcon
-                  className="me-3 -mt-0.5 inline-flex opacity-60"
-                  size={16}
-                  aria-hidden="true"
-                />
-                Estes códigos são sua última opção de recuperação. Guarde-os em
-                um local seguro e nunca os compartilhe.
-              </p>
-            </div>
-          </div>
-          <div className="text-center py-4">
-            <p className="text-muted-foreground mb-4">
-              Você ainda não gerou códigos de backup.
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Cada código pode ser usado apenas uma vez. Novos códigos invalidam
-            os anteriores.
-          </p>
-        </div>
+       <RecoveryCodes userData={userData} />
       ),
     },
   ];
   const sub_menu_email = [
     {
       id: "1",
-      icon: userData.metadata[0].emailVerified ? (
-        <Mail className="w-5 h-5 text-green-200" />
+      icon: userData.metadata.emailVerified ? (
+        <Mail className="w-5 h-5 " />
       ) : (
-        <Mail className="w-5 h-5 text-amber-500" />
+        <Mail className="w-5 h-5" />
       ),
       title: "Verificação de email",
-      subicon: userData.metadata[0].emailVerified ? (
-        ""
-      ) : (
-        <Badge className="bg-amber-600/10 dark:bg-amber-600/20 hover:bg-amber-600/10 text-amber-500 border-amber-600/60 shadow-none rounded-full">
+      subicon: userData.metadata.emailVerified ? (
+        <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
           {" "}
-          <div className="h-1.5 w-1.5 rounded-full bg-amber-500 mr-2" />{" "}
-          Necessita de atualização
+          <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />
+          Ativo{" "}
+        </Badge>
+      ) : (
+        <Badge className="bg-gray-600/10 dark:bg-gray-600/20 hover:bg-gray-600/10 text-gray-500 shadow-none rounded-full">
+          {" "}
+          <div className="h-1.5 w-1.5 rounded-full bg-gray-500 mr-1" />
+          Pendente{" "}
         </Badge>
       ),
 

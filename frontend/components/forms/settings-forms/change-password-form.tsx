@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/stores/currentUserStore";
 import { User } from "@/types";
 import { toast } from "sonner";
+import url from "@/api";
 
 function ChangePassowordForm({ userData }: { userData: User }) {
   const { set } = useUserStore();
@@ -46,7 +47,7 @@ function ChangePassowordForm({ userData }: { userData: User }) {
     setLoading(true);
     setTimeout(async () => {
       try {
-        const response = await fetch("http://localhost:5000/users/credential", {
+        const response = await fetch(`${url}/users/credential`, {
           method: "PUT",
           credentials: "include",
           headers: {
@@ -71,7 +72,7 @@ function ChangePassowordForm({ userData }: { userData: User }) {
         toast.success("Senha atualizada com sucesso.");
 
         return data;
-      } catch (error) {
+      } catch (error: any) {
         form.control._disableForm(false);
 
         if (error.message === "invalid password") {
@@ -127,7 +128,7 @@ function ChangePassowordForm({ userData }: { userData: User }) {
   };
 
   return (
-    <div>
+    <div className="p-4 py-10 bg-white rounded-lg border border-gray-200 ">
       {isLoading ? (
         <div>
           <div className="animate-pulse">

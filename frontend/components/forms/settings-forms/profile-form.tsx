@@ -19,6 +19,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { User } from "@/types";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/stores/currentUserStore";
+import url from "@/api";
 
 function ProfileForm({ userData }: { userData: User }) {
   const { set } = useUserStore();
@@ -52,7 +53,6 @@ function ProfileForm({ userData }: { userData: User }) {
       firstName: userData ? userData.firstName : undefined,
       lastName: userData ? userData.lastName : undefined,
       bio: userData ? userData.bio : undefined,
-    
     },
   });
 
@@ -70,7 +70,7 @@ function ProfileForm({ userData }: { userData: User }) {
     toast.promise(
       (async () => {
         try {
-          const response = await fetch("http://localhost:5000/users", {
+          const response = await fetch(`${url}/users`, {
             method: "PATCH",
             credentials: "include",
             headers: {

@@ -1,4 +1,6 @@
 "use client";
+import { User } from "@/types";
+
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect, useMemo, useState } from "react";
@@ -25,11 +27,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { User } from "@/types";
+import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useUserStore } from "@/lib/stores/currentUserStore";
 import {
+  Activity,
+  AlertCircleIcon,
+  AlertTriangleIcon,
   AtSignIcon,
   BellIcon,
   CheckIcon,
@@ -48,6 +52,7 @@ import {
   InfoIcon,
   LifeBuoyIcon,
   Link2Icon,
+  Loader2,
   LucideShieldUser,
   Mail,
   Plus,
@@ -55,6 +60,10 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheckIcon,
+  Trash,
+  Trash2Icon,
+  User2,
+  XCircleIcon,
   XIcon,
   ZapIcon,
 } from "lucide-react";
@@ -75,88 +84,83 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import OTP from "./otp-codigos";
 import { CloseIcon } from "@/components/tiptap-icons/close-icon";
 import { Badge } from "@/components/ui/badge";
+import FullPageLoad from "@/components/custom/full-page-load";
+import { useRouter } from "next/navigation";
 
-function DetailFormProfile({ userData }: { userData: User }) {
+
+function DetailFormProfile({ userData }: { userData: User}) {
+
+  const queryClient = useQueryClient();
+
   const { set } = useUserStore();
 
-  console.log(userData);
+  const route = useRouter();
 
-  useEffect(() => {
-    console.log(Object.entries(userData.metadata[0]).map((item) => item[0]));
-  });
+  const [timer, setTimer] = useState(0);
+  const [isActivated, setActivatedTimer] = useState(false);
+  const [load, setLoading] = useState(false);
+
+
   const profileSchema = z.object({
-    accountdelete: z.string(),
+    password: z.string(),
   });
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      accountdelete: "",
+      password: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof profileSchema>) {
-    const changedFieldNames = Object.keys(form.formState.dirtyFields);
+  async function onSubmit() {
+    form.clearErrors();
 
-    const n = {};
+    setLoading(true);
 
-    changedFieldNames.map((fieldName) => {
-      return (n[fieldName] = values[fieldName]);
-    });
+    try {
+      const response = await fetch(`http://localhost:5000/users`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          password: form.getValues().password,
+        }),
+      });
 
-    console.log(values);
+      const data = await response.json();
 
-    /*(async () => {
-      try {
-        const response = await fetch("http://localhost:5000/users", {
-          method: "PATCH",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(n),
+      if (!response.ok) throw data;
+
+      queryClient.setQueryData(["userData"], null);
+
+      route.push("/user/deleted");
+    } catch (err:any) {
+      if (err.statusCode === 401) {
+        setLoading(false);
+
+        form.setError("password", {
+          message: "Senha invalida, tente novamente.",
         });
-
-        const data = await response.json();
-
-        if (data.message && data.message[0].includes("")) {
-          form.setError("root", {
-            message: "",
-          });
-          throw new Error();
-        }
-        if (data.error) throw new Error(data.error);
-
-        form.control._disableForm(false);
-
-        set(data);
-        return data;
-      } catch (error) {
-        form.control._disableForm(false);
-        throw error;
       }
-    })(),
-      {
-        loading: "Atualizando perfil...",
-        success: "Perfil atualizado com sucesso!",
-        error: (err) => `Alguma coisa deu errado, tente novamente mais tarde.`,
-      }; */
+    }
   }
 
   function formatKeyName(key: string): string {
     const names: Record<string, string> = {
-      emailVerified: "Verificação de E-mail",
-      twoFactorEnabled: "Autenticação em 2 Etapas",
-      registrationIp: "IP de Registro",
-      registrationDevice: "Dispositivo de Registro",
-      lastLogin: "Último Acesso",
-      lastLoginIp: "IP do Último Acesso",
-      loginCount: "Total de Logins",
-      failedLoginAttempts: "Tentativas Falhas",
-      profileVersion: "Versão do Perfil",
-      createdAt: "Conta Criada Em",
-      updatedAt: "Última Atualização",
-      accountLockedUntil: "Conta Bloqueada Até",
+      emailVerified: "Verificação de e-mail",
+      twoFactorEnabled: "Autenticação em 2 etapas",
+      registrationIp: "IP de registro",
+      registrationDevice: "Dispositivo de registro",
+      lastLogin: "Último acesso",
+      lastLoginIp: "IP do último acesso",
+      loginCount: "Total de logins",
+      failedLoginAttempts: "Tentativas falhas",
+      profileVersion: "Versão do perfil",
+      createdAt: "Conta criada Em",
+      updatedAt: "Última atualização",
+      accountLockedUntil: "Conta bloqueada até",
     };
 
     return names[key] || key;
@@ -177,13 +181,6 @@ function DetailFormProfile({ userData }: { userData: User }) {
             }
           >
             {" "}
-            <div
-              className={
-                value
-                  ? "h-1.5 w-1.5 rounded-full bg-green-500 mr-2"
-                  : "h-1.5 w-1.5 rounded-full bg-amber-500 mr-2"
-              }
-            />{" "}
             {value ? "Ativado" : "Desativado"}
           </Badge>
         );
@@ -204,38 +201,82 @@ function DetailFormProfile({ userData }: { userData: User }) {
     }
   }
 
+  useEffect(() => {
+    if (isActivated) {
+      const x = setInterval(() => {
+        setTimer((oldValue) => {
+          if (oldValue <= 1) {
+            clearInterval(x);
+            return 0;
+          }
+          return oldValue - 1;
+        });
+      }, 1000);
+    }
+  }, [isActivated]);
+
   const sub_menu = [
     {
-      id: "1",
-      icon: <IdCard />,
-      title: "Detalhes da conta",
+      id: "3",
+      icon: <Activity />,
+      title: "Status da conta",
       subicon: "",
-
       content: (
-        <div className="space-y-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Detalhes da Conta
-          </h3>
+        <div className=" space-y-4 p-4 bg-white rounded-lg border border-gray-200">
+          {/* Status de Verificação */}
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 " />
+              <span>Verificação de e-mail</span>
+            </div>
+            {userData.metadata.emailVerified ? (
+              <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
+                {" "}
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />
+                Verificado
+              </Badge>
+            ) : (
+              <Badge className="bg-gray-600/10 dark:bg-gray-600/20 hover:bg-gray-600/10 text-gray-500 shadow-none rounded-full">
+                {" "}
+                <div className="h-1.5 w-1.5 rounded-full bg-gray-500 mr-1" />
+                Pendente
+              </Badge>
+            )}
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(userData.metadata[0]).map(([key, value]) => {
-              // Ignorar campos sensíveis ou irrelevantes
-              if (
-                ["id", "userId", "twoFactorSecret", "deviceHash"].includes(key)
-              )
-                return null;
+          {/* Selo de Verificação */}
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 " />
+              <span>Selo de verificação</span>
+            </div>
 
-              return (
-                <div key={key} className="bg-gray-50 p-3 rounded-md">
-                  <dt className="text-xs font-medium text-gray-500 capitalize">
-                    {formatKeyName(key)}
-                  </dt>
-                  <dd className="mt-1 text-xs text-gray-900">
-                    {formatValue(key, value)}
-                  </dd>
-                </div>
-              );
-            })}
+            {userData.metadata.emailVerified ? (
+              <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
+                {" "}
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />
+                Ativo
+              </Badge>
+            ) : (
+              <Badge className="bg-gray-600/10 dark:bg-gray-600/20 hover:bg-gray-600/10 text-gray-500 shadow-none rounded-full">
+                {" "}
+                <div className="h-1.5 w-1.5 rounded-full bg-gray-500 mr-1" />
+                Pendente
+              </Badge>
+            )}
+          </div>
+
+          {/* Status da Conta */}
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex items-center gap-2">
+              <User2 className="h-4 w-4 " />
+              <span>Status</span>
+            </div>
+            <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
+              {" "}
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />
+              Ativa
+            </Badge>
           </div>
         </div>
       ),
@@ -243,65 +284,123 @@ function DetailFormProfile({ userData }: { userData: User }) {
     {
       id: "11",
       icon: <CirclePowerIcon />,
-      title: "Deletar minha conta",
+      title: " Exclusão de conta",
       subicon: "",
 
       content: (
-        <div className=" space-y-4 p-4">
+        <div className=" p-4 py-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-col">
+          <div className="text-center ">
+            <AlertTriangleIcon className="mx-auto h-8 w-8  mb-3" />
+            <h2 className="text-lg font-semibold mb-2">
+              Exclusão de Conta Permanente
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Antes de prosseguir, por favor leia atentamente:
+            </p>
+
+            <div className="my-5 ">
+              <ul className="space-y-2  text-center list-disc text-sm text-gray-700">
+              <li className="[&::marker]:text-gray-500/0">
+                <strong>Dados permanentes:</strong> Todos os seus dados serão
+                apagados imediatamente
+              </li>
+              <li className="[&::marker]:text-gray-500/0">
+                <strong>Conteúdo público:</strong> Pode permanecer visível em
+                serviços integrados
+              </li>
+              <li className="[&::marker]:text-gray-500/0">
+                <strong>Assinaturas:</strong> Cancelamento imediato sem
+                reembolso
+              </li>
+            </ul>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-6">
+              Ao deletar sua conta, você concorda com nossos{" "}
+              <a href="/terms" className="text-blue-600 hover:underline">
+                Termos de Serviço
+              </a>{" "}
+              e{" "}
+              <a href="/privacy" className="text-blue-600 hover:underline">
+                Política de Privacidade
+              </a>
+              .
+            </p>
+          </div>
+
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="destructive">Deletar minha conta</Button>
+              <Button
+                variant="destructive"
+                className=""
+                onClick={() => {
+                  setActivatedTimer(true);
+                }}
+              >
+                <Trash2Icon className="mr-2 h-4 w-4" />
+                Prosseguir com a exclusão
+              </Button>
             </DialogTrigger>
-            <DialogContent>
-              <div className="flex flex-col items-center gap-2">
-                <div
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                  aria-hidden="true"
-                >
-                  <CircleAlertIcon className="opacity-80" size={16} />
+            <DialogContent className="max-w-md">
+              <div className="flex flex-col items-center gap-4  text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                  <AlertTriangleIcon className="h-6 w-6 text-red-600" />
                 </div>
+
                 <DialogHeader>
-                  <DialogTitle className="sm:text-center">
-                    Confirmação
+                  <DialogTitle className="text-lg font-semibold">
+                    Tem certeza que deseja deletar sua conta?
                   </DialogTitle>
-                  <DialogDescription className="sm:text-center">
-                    Esta ação não pode ser desfeita. Para confirmar, insira o
-                    seu email
+                  <DialogDescription className="text-sm text-center text-muted-foreground">
+                    Esta ação é permanente e não pode ser desfeita.
                   </DialogDescription>
                 </DialogHeader>
               </div>
 
-              <div className="*:not-first:mt-2">
-                <FormField
-                  control={form.control}
-                  name="accountdelete"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Digite o seu email para deletar a sua conta.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline" className="flex-1">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder=""
+                        {...field}
+                        className=""
+                        type="password"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Digite sua senha para confirmar
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                onClick={() => {
+                  onSubmit();
+                }}
+                disabled={timer <= 0 ? false : true}
+                variant="destructive"
+                className="cursor-pointer"
+                type="submit"
+              >
+                {load ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <>
+                    ({timer}) Confirmar
+                    <Trash />
+                  </>
+                )}
+              </Button>
+              <DialogFooter className="flex items-center justify-between">
+                <DialogClose asChild className="">
+                  <Button variant="outline" className=" w-full" type="button">
                     Cancelar
                   </Button>
                 </DialogClose>
-                <Button
-                  type="button"
-                  className="flex-1"
-                  disabled={form.getValues().accountdelete !== userData.email}
-                >
-                  Deletar
-                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

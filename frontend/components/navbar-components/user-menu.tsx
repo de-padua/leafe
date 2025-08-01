@@ -49,8 +49,10 @@ export default function UserMenu(props: { userdata: User }) {
   const mutation = useMutation({
     mutationFn: logout,
     onSuccess: (data) => {
+
       console.log("logout successful:", data);
       queryClient.invalidateQueries();
+      queryClient.clear()
     },
     onError: (error) => {
       console.error("logout error:", error);

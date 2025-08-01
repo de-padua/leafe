@@ -17,9 +17,11 @@ import { Button } from "@/components/ui/button";
 import SecurityForm from "@/components/forms/settings-forms/security-form";
 import DetailForm from "@/components/post-form/detail";
 import DetailFormProfile from "@/components/forms/settings-forms/detail-form";
+import NotFoundCustom from "@/components/custom/NotFound";
 
 function page() {
   const { isLoadingError, isLoading, currentUser } = useUserStore();
+
 
   if (isLoading)
     return (
@@ -29,7 +31,7 @@ function page() {
     );
   if (isLoadingError?.message === "Too many requests")
     return (
-      <div className="w-full h-screen flex items-center  justify-center flex-col gap-y-5">
+      <div className="w-full  flex items-center  justify-center flex-col gap-y-5">
         <h1 className="text-5xl">⚠️ Muitas Solicitações </h1>
         <p>
           Você fez muitas requisições em um curto período. Por favor, aguarde
@@ -56,8 +58,10 @@ function page() {
     );
 
   return (
-    <div className="w-full  h-screen flex items-center  flex-col justify-start">
+    <div className="w-full    flex items-center  flex-col justify-center">
+     
       <div className="w-2/3 h-2/3 my-10  flex items-center gap-x-2 p-2 rounded-md  ">
+      
         <Tabs
           defaultValue="tab-1"
           orientation="vertical"

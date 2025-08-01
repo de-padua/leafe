@@ -20,6 +20,7 @@ import { Separator } from "../ui/separator";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SwitchIcon } from "@radix-ui/react-icons";
+import url from "@/api";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email" }),
@@ -39,7 +40,6 @@ function LoginForm() {
   const mutation = useMutation({
     mutationFn: loginUser,
     onSuccess: (data) => {
-      console.log("Login successful:", data);
       queryClient.setQueryData(["userData"], data);
     },
     onError: (error) => {
@@ -51,7 +51,7 @@ function LoginForm() {
   });
 
   async function loginUser(credentials: { email: string; password: string }) {
-    const response = await fetch("http://localhost:5000/auth", {
+    const response = await fetch(`${url}/auth`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

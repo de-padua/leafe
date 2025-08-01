@@ -15,17 +15,8 @@ export default function AuthWrapper({
   const { data, error } = useQuery({
     queryKey: ["userData"],
     queryFn: () => getUserData({ setLoading }),
-    retry: (failureCount, error) => {
-      if (failureCount > 1) {
-        setLoading(false);
-        return false;
-      } else {
-        console.log(error);
-        setLoading(true);
-        return true;
-      }
-    },
-    retryDelay: 1500,
+    
+
   });
 
   useEffect(() => {
