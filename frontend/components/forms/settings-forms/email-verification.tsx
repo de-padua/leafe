@@ -26,8 +26,6 @@ import url from "@/api";
 function EmailVerification({ userData }: { userData: User }) {
   const id = useId();
 
-
-
   const [isLoading, setLoading] = useState(false);
 
   const sendVerificationEmail = async () => {
@@ -70,12 +68,12 @@ function EmailVerification({ userData }: { userData: User }) {
       <div className="w-full flex items-center justify-center border p-3 rounded-md flex-col gap-2 py-8">
         <p className="text-xs text-gray-600">Email verificado com sucesso.</p>
         <p className="text-xs text-gray-400">
-          Seu e-mail está verificado e sua conta está segura. 
+          Seu e-mail está verificado e sua conta está segura.
           <a
             href="/verified-benefits"
             className="text-blue-600 hover:underline ml-1"
           >
-           Veja as vantagens de ter um e-mail verificado.
+            Veja as vantagens de ter um e-mail verificado.
           </a>
         </p>
       </div>
@@ -92,6 +90,9 @@ function EmailVerification({ userData }: { userData: User }) {
           Será enviado um link ao seu email, clique no link para ser
           redirecionado e concluir a verificação de email.
         </p>
+        <div className="flex items-center justify-center">
+          <Button variant={"outline"} className="text-xs cursor-pointer"  onClick={sendVerificationEmail}>Não recebeu o link ? Reenviar link de confirmação</Button>
+        </div>
       </div>
     );
   }
@@ -113,12 +114,13 @@ function EmailVerification({ userData }: { userData: User }) {
       )}
       <p className="text-xs text-gray-600">
         Será enviado um link ao seu email, clique no link para ser redirecionado
-        e concluir a verificação de email. <a
-            href="/verified-benefits"
-            className="text-blue-600 hover:underline ml-1"
-          >
-           Veja as vantagens de ter um e-mail verificado.
-          </a>
+        e concluir a verificação de email.{" "}
+        <a
+          href="/verified-benefits"
+          className="text-blue-600 hover:underline ml-1"
+        >
+          Veja as vantagens de ter um e-mail verificado.
+        </a>
       </p>
     </div>
   );

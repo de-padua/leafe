@@ -16,9 +16,10 @@ import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, ShieldAlert, Verified } from "lucide-react";
+import { useUserStore } from "@/lib/stores/currentUserStore";
 
 function RecoveryEmail({ userData }: { userData: User }) {
-
+  const { set } = useUserStore();
   const recoveryEmailSchema = z.object({
     recoveryEmail: z.string().email(),
   });
@@ -32,33 +33,45 @@ function RecoveryEmail({ userData }: { userData: User }) {
   const queryClient = useQueryClient();
 
   async function onSubmit(values: z.infer<typeof recoveryEmailSchema>) {
-    const response = await fetch(`http://localhost:5000/email/recovery-email`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: values.recoveryEmail,
-      }),
-    });
-    const data = await response.json();
-    queryClient.setQueryData(["userData"], data);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/email/recovery-email`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: values.recoveryEmail,
+          }),
+        }
+      );
 
-    return data;
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message);
+
+      queryClient.setQueryData(["userData"], data);
+      set(data);
+
+      return data;
+    } catch (error) {
+      form.setError("recoveryEmail", {
+        message: "Alguma coisa deu errado, espere um minuto e tente novamente.",
+      });
+    }
   }
 
-  return (
-    <div className="p-4  bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-col">
-      {userData.lastUpdateOnRecoveryEmail ? (
-        <>
+  if (new Date(userData.recoveryEmailChangeAvailableWhen) > new Date()) return (
+      <div className="p-4  bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-col">
+        <div className="w-full flex items-center justify-center ">
           <div className="my-5 text-center">
-        
             <p className="flex items-center gap-2  text-xs text-gray-600">
               Você poderá alterar o e-mail de recuperação novamente após:{" "}
               <span className=" font-semibold text-gray-500">
                 {new Date(
-                  userData.lastUpdateOnRecoveryEmail
+                  userData.recoveryEmailChangeAvailableWhen
                 ).toLocaleDateString("pt-BR", {
                   day: "2-digit",
                   month: "long",
@@ -72,29 +85,31 @@ function RecoveryEmail({ userData }: { userData: User }) {
               autorizadas.
             </p>
           </div>
-        </>
-      ) : (
-        <div className="w-full flex items-center justify-center ">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <div className="grid grid-cols-1 gap-2">
-                <div className="space-y-2 ">
-                 <div>
-                  
+        </div>
+      </div>
+    );
 
+  return (
+    <div className="p-4  bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-col">
+      <div className="w-full flex items-center justify-center ">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="space-y-2 ">
+                <div>
                   <p className="text-xs text-gray-600">
-                    E-mail alternativo para receber códigos de
-                    recuperação caso você perca o acesso à sua conta principal.
-                  </p>
-                 </div>
-
-                  <p className="text-xs text-gray-400">
-                    Importante: Este e-mail será usado apenas para segurança da
-                    conta e não para comunicações.
+                    E-mail alternativo para receber códigos de recuperação caso
+                    você perca o acesso à sua conta principal.
                   </p>
                 </div>
-                <div className="flex items-center justify-center w-full gap-x-2">
-                  <FormField
+
+                <p className="text-xs text-gray-400">
+                  Importante: Este e-mail será usado apenas para segurança da
+                  conta e não para comunicações.
+                </p>
+              </div>
+              <div className="flex items-center justify-center w-full gap-x-2">
+                <FormField
                   control={form.control}
                   name="recoveryEmail"
                   render={({ field }) => (
@@ -116,12 +131,11 @@ function RecoveryEmail({ userData }: { userData: User }) {
                     Salvar
                   </Button>
                 </div>
-                </div>
               </div>
-            </form>
-          </Form>
-        </div>
-      )}
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

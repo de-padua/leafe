@@ -115,7 +115,7 @@ function SecurityForm({ userData }: { userData: User }) {
       id: "2",
       icon: <ShieldAlert className="w-5 h-5 " />,
       title: "Códigos de Recuperação de Conta",
-      subicon: userData.isRecoveryCodesGenerated ? (
+      subicon: userData.metadata.recoveryCodesGenerated ? (
         <Badge className="bg-blue-600/10 dark:bg-blue-600/20 hover:bg-blue-600/10 text-blue-500 shadow-none rounded-full">
           {" "}
           <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1" />

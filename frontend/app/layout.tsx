@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/custom/navbar";
 import AuthWrapper from "@/components/AuthWrapper";
 import QueryClientProviderWrapper from "@/components/QueryProviderWrapper";
 import { Toaster } from "@/components/ui/sonner";

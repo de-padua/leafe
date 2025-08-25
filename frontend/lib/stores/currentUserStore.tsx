@@ -15,7 +15,7 @@ type UserStore = {
 };
 
 export const useUserStore = create<UserStore>()((set) => ({
-  currentUser: null,
+  currentUser:null,
   isLoading: false,
   isLoadingError: null,
   setNull: (state) => set({ currentUser: state }),
@@ -25,3 +25,4 @@ export const useUserStore = create<UserStore>()((set) => ({
   set: (user) => set({ currentUser: user }),
   remove: () => set({ currentUser: null }),
 }));
+ 

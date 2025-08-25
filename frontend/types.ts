@@ -17,14 +17,16 @@ export type User  = {
   recoveryPhone: string;
   lastUpdateOnRecoveryEmail: Date | null;
   lastUpdateOnPassword: Date | null;
-  isRecoveryCodesGenerated : boolean
-  recoveryCodes: string[]
-};
+  recoveryEmailChangeAvailableWhen :Date
+  recoveryCodes:{id:string,code:string,isUsed:boolean,userId:string}[]
+}
+
+export type  recoveryCode ={id:string,code:string,isUsed:boolean,userId:string}
 
 export type AccountMetadata = {
   id: string;
   userId: string;
-
+ recoveryCodesGenerated :boolean
   // Autenticação
   emailVerified: boolean;
   twoFactorEnabled: boolean;

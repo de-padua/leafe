@@ -37,6 +37,7 @@ import { useUserStore } from "@/lib/stores/currentUserStore";
 const navigationLinks = [{ href: "/home", label: "Home", active: true }];
 
 export default function CustomNavBar() {
+  
   const userData = useUserStore((state) => state.currentUser);
   const setNull = useUserStore((state) => state.setNull);
 
@@ -52,6 +53,7 @@ export default function CustomNavBar() {
     <header className="border-b px-4 md:px-6">
       <div className="flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-2">
+       
           <Popover>
        
             <PopoverContent align="start" className="w-36 p-1 md:hidden">

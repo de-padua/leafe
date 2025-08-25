@@ -20,17 +20,11 @@ export default function AuthWrapper({
   });
 
   useEffect(() => {
-    if (data) {
+    if (data?.id) {
       setLoading(false);
       set(data);
-    } else {
-      if (error?.message === "Too many requests") {
-        setLoadingError({ ...error, message: "Too many requests" });
-      } else {
-        setNull(null);
-      }
     }
-  }, [data, error, set]);
+      }, [data]);
 
   return <>{children}</>;
 }

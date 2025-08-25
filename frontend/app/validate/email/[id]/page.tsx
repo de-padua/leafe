@@ -29,7 +29,7 @@ export default function EmailVerificationPage() {
     setFetchState("LOAD");
     try {
       const response = await fetch(
-        `http://localhost:5000/email/validate/${params.id}`,
+        `http://localhost:5000/email/${params.id}`,
         {
           method: "GET",
           credentials: "include",

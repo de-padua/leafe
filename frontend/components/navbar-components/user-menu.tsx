@@ -26,9 +26,12 @@ import {
 import { User } from "@/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExitIcon } from "@radix-ui/react-icons";
+import { useUserStore } from "@/lib/stores/currentUserStore";
 
 export default function UserMenu(props: { userdata: User }) {
   const queryClient = useQueryClient();
+
+  const { setNull } = useUserStore();
 
   const logout = async () => {
     try {
@@ -49,10 +52,10 @@ export default function UserMenu(props: { userdata: User }) {
   const mutation = useMutation({
     mutationFn: logout,
     onSuccess: (data) => {
-
       console.log("logout successful:", data);
+      setNull(null);
       queryClient.invalidateQueries();
-      queryClient.clear()
+      queryClient.clear();
     },
     onError: (error) => {
       console.error("logout error:", error);
@@ -69,7 +72,10 @@ export default function UserMenu(props: { userdata: User }) {
               src={props.userdata.profilePictureUrl}
               alt="Profile image"
             />
-            <AvatarFallback>{props.userdata.firstName[0]}</AvatarFallback>
+            <AvatarFallback>
+              {props.userdata.firstName[0].toUpperCase()}
+              {props.userdata.lastName[0].toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
