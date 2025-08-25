@@ -1,6 +1,6 @@
 import { AuthGuard, CustomRequestWithId } from 'src/auth/auth.guard';
-import { EmailVerificationService } from './email-verification.service';
 import {
+  Body,
   Controller,
   Get,
   HttpStatus,
@@ -11,15 +11,17 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request, request, Response } from 'express';
+import { EmailService } from './email.service';
+import RecoveryEmailDto from './dtos/recovery-email-dto';
 
-@Controller('email-verification')
-export class EmailVerificationController {
+@Controller('email')
+export class EmailController {
   constructor(
-    private readonly EmailVerificationService: EmailVerificationService,
+    private readonly EmailService: EmailService,
   ) {}
   @Post()
   @UseGuards(AuthGuard)
-  async createCode(
+  async createCodeController(
     @Req() request: CustomRequestWithId,
     @Res({ passthrough: true }) response: Response,
   ) {
@@ -28,7 +30,7 @@ export class EmailVerificationController {
     const userId = request.id;
 
     const isCodeCreated =
-      await this.EmailVerificationService.createCode(userId);
+      await this.EmailService.createCode(userId);
 
     return {
       data: {
@@ -39,7 +41,7 @@ export class EmailVerificationController {
 
   @Get(':code')
   @UseGuards(AuthGuard)
-  async verifyEmail(
+  async verifyEmailController(
     @Req() request: CustomRequestWithId,
     @Res({ passthrough: true }) response: Response,
   ) {
@@ -49,7 +51,7 @@ export class EmailVerificationController {
     const verificationCode = request.params['code'];
 
     const emailValidationResponse =
-      await this.EmailVerificationService.validateEmailVerificationCode(
+      await this.EmailService.validateEmailVerificationCode(
         userId,
         verificationCode,
       );
@@ -61,4 +63,31 @@ export class EmailVerificationController {
 
     return emailValidationResponse.data.userData
   }
+
+   @Post('recovery-email')
+  @UseGuards(AuthGuard)
+  async recoveryEmailController(
+    @Req() request: CustomRequestWithId,
+    @Res({ passthrough: true }) response: Response,
+    @Body() body:RecoveryEmailDto,
+  ) {
+    if (!request.id) return HttpStatus.UNAUTHORIZED;
+
+    const userId = request.id;
+  
+
+    const emailValidationResponse =
+      await this.EmailService.addRecoveryMail(
+        userId,
+        body.email,
+      );
+
+    response.cookie(
+      'accessToken',
+      emailValidationResponse.newAccessToken,
+    );
+
+    return emailValidationResponse.newUserData
+  }
+  
 }

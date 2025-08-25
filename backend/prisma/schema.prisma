@@ -16,7 +16,7 @@ model test {
 model user {
   id                 String            @id @default(uuid())
   email              String            @unique
-  password           String            // Recomendo renomear para hashedPassword
+  password           String           
   firstName          String
   lastName           String
   bio                String?
@@ -24,27 +24,43 @@ model user {
   imoveis            imovel[]
   recoveryEmail      String?           @unique
   recoveryPhone      String?           @unique
-  metadata           accountMetadata[] @relation("UserMetadata")
+  metadata           accountMetadata?   
   
-  // Timestamps adicionais para controle
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  // Índices para performance
+  
+  recoveryEmailChangeAvailableWhen DateTime @default(now())         
+
+
+  recoveryCodes       recoveryCodes[]
+
   @@index([email])
   @@index([createdAt])
 }
 
+model recoveryCodes {
+
+
+   id                 String            @id @default(uuid())
+   code  String
+  user                user             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String           
+  isUsed  Boolean     @default(false)
+
+}
+
 model accountMetadata {
   id                  String           @id @default(uuid())
-  user                user             @relation("UserMetadata", fields: [userId], references: [id], onDelete: Cascade)
+  user                user             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId              String           @unique // Relação 1:1 (cada user tem apenas 1 metadata)
-  
+   
   // Autenticação
   emailVerified       Boolean          @default(false)
   twoFactorEnabled    Boolean          @default(false)
   twoFactorSecret     String?          // Armazenar criptografado se usar TOTP
-  
+  recoveryCodesGenerated Boolean          @default(false)
+
   // Rastreamento
   registrationIp      String?          @db.VarChar(45)  // IPv4/IPv6
   registrationDevice  String?          @db.VarChar(512) // User-Agent completo

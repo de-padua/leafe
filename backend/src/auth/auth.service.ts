@@ -100,11 +100,13 @@ export class AuthService {
     try {
       const accessTokenValidation =
         await this.verifyJwtAccessToken(accessToken);
+  
+
 
       if (accessTokenValidation.isValid) {
         return {
           accessToken: accessToken,
-          data: accessTokenValidation.data,
+          data: {...accessTokenValidation.data},
           isRefreshed: false,
           isValid: true,
         };
@@ -130,7 +132,7 @@ export class AuthService {
         },
         include: { metadata: true },
       });
-
+       
       if (!userData) throw new NotFoundException();
 
       const newAccessToken = await this.createAccessTokenJwt(userData);
@@ -141,7 +143,7 @@ export class AuthService {
 
       return {
         accessToken: newAccessToken,
-        data: tokenData.data,
+        data: {...tokenData.data},
         isRefreshed: true,
         isValid: true,
       };
@@ -164,6 +166,9 @@ export class AuthService {
         where: {
           email: email,
         },
+        include:{
+          metadata:true
+        }
       });
 
       if (!userExist) throw new NotFoundException();
@@ -189,5 +194,7 @@ export class AuthService {
     } catch (err) {
       throw err;
     }
-  };
+  }
+
+ 
 }

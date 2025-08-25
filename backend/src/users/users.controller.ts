@@ -52,7 +52,7 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @Put('/credential')
   async updateUserCredential(
-    @Body() passwordData:updateUserPasswordDto ,
+    @Body() passwordData: updateUserPasswordDto,
     @Req() request: CustomRequestWithId,
     @Res({ passthrough: true }) response: Response,
   ) {
@@ -64,8 +64,36 @@ export class UsersController {
       userId,
     );
 
-    console.log(newData)
     response.cookie('accessToken', newData.newAccessToken);
     return newData.newUserData;
+  }
+  @UseGuards(AuthGuard)
+  @Post('/recovery-codes')
+  async createUserRecoveryCodes(
+    @Req() request: CustomRequestWithId,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (!request.id) return response.status(HttpStatus.UNAUTHORIZED);
+
+    const userId = request.id;
+
+    const newData = await this.UserService.createCodes(userId);
+
+    response.cookie('accessToken', newData.newAccessToken);
+    return newData.newData;
+  }
+  @UseGuards(AuthGuard)
+  @Post('/recovery-codes/access')
+  async getUserRecoveryCodes(
+    @Req() request: CustomRequestWithId,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (!request.id) return response.status(HttpStatus.UNAUTHORIZED);
+
+    const userId = request.id;
+
+    const codes = await this.UserService.getUserCodes(userId);
+
+    return codes;
   }
 }

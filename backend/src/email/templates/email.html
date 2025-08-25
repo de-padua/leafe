@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifique seu e-mail - Leafe</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.5;
+            color: #1a1a1a;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 16px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #000000;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 16px 0;
+        }
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header " style="text-align: center;" >
+           
+            <h1>Verificação de email</h1>
+        </div>
+
+        
+        <p style="text-align: center;">Obrigado por se inscrever no Leafe. Para começar a usar sua conta, clique no botão abaixo para verificar seu endereço de e-mail.</p>
+
+        <div style="text-align: center;">
+            <a href="{{verificationUrl}}" class="button">Verificar e-mail</a>
+        </div>
+
+        <p style="text-align: center;">Se você não criou uma conta no Leafe, pode ignorar este e-mail com segurança.</p>
+
+        <div class="footer">
+            <p>© {{currentYear}} Leafe. Todos os direitos reservados.</p>
+            <p>Se precisar de ajuda, entre em contato conosco em <a href="mailto:suporte@leafe.com">suporte@leafe.com</a></p>
+        </div>
+    </div>
+</body>
+</html>
