@@ -3,26 +3,28 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
 type UserStore = {
-  currentUser: User | null | "NOT FOUND";
-  set: (user: User) => void;
-  setNotFOUND: (data: "NOT FOUND") => void;
-  remove: () => void;
+  currentUser: User | null;
+  isNotFound: boolean;
   isLoading: boolean;
-  setLoading: (state: boolean) => void;
   isLoadingError: Error | null;
+  set: (user: User) => void;
+  setNotFound: () => void;
+  setNull: () => void;
+  setLoading: (state: boolean) => void;
   setLoadingError: (error: Error) => void;
-  setNull: (data: null) => void;
+  remove: () => void;
 };
 
 export const useUserStore = create<UserStore>()((set) => ({
-  currentUser:null,
+  currentUser: null,
+  isNotFound: false,
   isLoading: false,
   isLoadingError: null,
-  setNull: (state) => set({ currentUser: state }),
-  setNotFOUND: (state) => set({ currentUser: state }),
-  setLoadingError: (state) => set({ isLoadingError: state }),
+  set: (user) => set({ currentUser: user, isNotFound: false }),
+  setNotFound: () => set({ currentUser: null, isNotFound: true }),
+  setNull: () => set({ currentUser: null, isNotFound: false }),
   setLoading: (state) => set({ isLoading: state }),
-  set: (user) => set({ currentUser: user }),
-  remove: () => set({ currentUser: null }),
+  setLoadingError: (state) => set({ isLoadingError: state }),
+  remove: () => set({ currentUser: null, isNotFound: false }),
 }));
  

@@ -61,7 +61,7 @@ export class EmailController {
       emailValidationResponse.data.accountAccessToken,
     );
 
-    return emailValidationResponse.data.userData
+    return emailValidationResponse.data.userData.user
   }
 
    @Post('recovery-email')

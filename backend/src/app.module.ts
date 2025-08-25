@@ -19,12 +19,12 @@ const isProd = false;
   imports: [
     MailerModule.forRoot({
       transport: {
-        host: 'smtp.ethereal.email', // Your SMTP host
+        host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
-       auth: {
-        user: 'quincy17@ethereal.email',
-        pass: 'yCky7HtDJnE2SHwRM7'
+      auth: {
+        user: 'lydia.walter58@ethereal.email',
+        pass: 'HPfdT3XfE9WTrBvx2t'
     },
       },
       defaults: {
@@ -32,9 +32,9 @@ const isProd = false;
       },
       template: {
         dir: isProd
-          ? join(__dirname, 'email', 'templates') // produção: dist/email/templates
-          : join(__dirname, '..', 'src', 'email', 'templates'), // dev: src/email/templates
-        adapter: new HandlebarsAdapter(), // ou EjsAdapter se usar ejs
+          ? join(__dirname, 'email', 'templates') 
+          : join(__dirname, '..', 'src', 'email', 'templates'), 
+        adapter: new HandlebarsAdapter(), 
         options: {
           strict: true,
         },
@@ -42,7 +42,7 @@ const isProd = false;
     }),
     CacheModule.register({ isGlobal: true }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET, // Use environment variable
+      secret: process.env.JWT_SECRET, 
     }),
   ],
   controllers: [UsersController, AuthController, EmailController],

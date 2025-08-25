@@ -16,11 +16,14 @@ import {
 } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import Link from "next/link";
+import { useUserStore } from "@/lib/stores/currentUserStore";
 
 export default function EmailVerificationPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const {set} = useUserStore()
   const queryClient = useQueryClient();
+
   const [fetchState, setFetchState] = useState<
     "IDLE" | "LOAD" | "SUCCESS" | "ERROR"
   >("IDLE");
@@ -44,12 +47,13 @@ export default function EmailVerificationPage() {
       }
 
       const data = await response.json();
-      queryClient.setQueryData(["userData"], data);
+      set(data)
       setFetchState("SUCCESS");
 
       setTimeout(() => {
         router.push("/user/settings");
       }, 1233000);
+
     } catch (error) {
       setFetchState("ERROR");
       setTimeout(() => {
@@ -59,7 +63,9 @@ export default function EmailVerificationPage() {
   };
 
   useEffect(() => {
-    verifyEmail();
+     setTimeout(() => {
+      verifyEmail();
+     }, 1000);
   }, []);
 
   if (fetchState === "IDLE" || fetchState === "LOAD") {

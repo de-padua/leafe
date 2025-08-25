@@ -9,7 +9,7 @@ export default function AuthWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { set, setLoading, setLoadingError, setNotFOUND, setNull } =
+  const { set, setLoading, setLoadingError,setNotFound, setNull } =
     useUserStore();
 
   const { data, error } = useQuery({
