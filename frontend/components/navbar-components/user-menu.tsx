@@ -53,7 +53,6 @@ export default function UserMenu(props: { userdata: User }) {
     mutationFn: logout,
     onSuccess: (data) => {
       console.log("logout successful:", data);
-      setNull(null);
       queryClient.invalidateQueries();
       queryClient.clear();
     },
@@ -91,7 +90,7 @@ export default function UserMenu(props: { userdata: User }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <a href={`/user/profile/${props.userdata.id}`}>
+          <a href={`/user/profile/v1?userId=${props.userdata.id}`}>
             <DropdownMenuItem>
               <User2 size={16} className="opacity-60" aria-hidden="true" />
               <span> Meu perfil</span>
