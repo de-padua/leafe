@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   AlertCircleIcon,
@@ -12,41 +12,37 @@ import {
   UploadIcon,
   VideoIcon,
   XIcon,
-} from "lucide-react"
+} from "lucide-react";
 
-import {
-  formatBytes,
-  useFileUpload,
-} from "@/hooks/use-file-upload"
-import { Button } from "@/components/ui/button"
-
+import { FileWithPreview, formatBytes, useFileUpload } from "@/hooks/use-file-upload";
+import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
 const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
-  const fileType = file.file instanceof File ? file.file.type : file.file.type
-  const fileName = file.file instanceof File ? file.file.name : file.file.name
+  const fileType = file.file instanceof File ? file.file.type : file.file.type;
+  const fileName = file.file instanceof File ? file.file.name : file.file.name;
 
   const iconMap = {
-
     image: {
       icon: ImageIcon,
       conditions: (type: string) => type.startsWith("image/"),
     },
-  }
+  };
 
   for (const { icon: Icon, conditions } of Object.values(iconMap)) {
     if (conditions(fileType)) {
-      return <Icon className="size-5 opacity-60" />
+      return <Icon className="size-5 opacity-60" />;
     }
   }
 
-  return <FileIcon className="size-5 opacity-60" />
-}
+  return <FileIcon className="size-5 opacity-60" />;
+};
 
 const getFilePreview = (file: {
-  file: File | { type: string; name: string; url?: string }
+  file: File | { type: string; name: string; url?: string };
 }) => {
-  const fileType = file.file instanceof File ? file.file.type : file.file.type
-  const fileName = file.file instanceof File ? file.file.name : file.file.name
+  const fileType = file.file instanceof File ? file.file.type : file.file.type;
+  const fileName = file.file instanceof File ? file.file.name : file.file.name;
 
   const renderImage = (src: string) => (
     <img
@@ -54,15 +50,15 @@ const getFilePreview = (file: {
       alt={fileName}
       className="size-full rounded-t-[inherit] object-cover"
     />
-  )
+  );
 
   return (
     <div className="bg-accent flex aspect-square items-center justify-center overflow-hidden rounded-t-[inherit]">
       {fileType.startsWith("image/") ? (
         file.file instanceof File ? (
           (() => {
-            const previewUrl = URL.createObjectURL(file.file)
-            return renderImage(previewUrl)
+            const previewUrl = URL.createObjectURL(file.file);
+            return renderImage(previewUrl);
           })()
         ) : file.file.url ? (
           renderImage(file.file.url)
@@ -73,18 +69,18 @@ const getFilePreview = (file: {
         getFileIcon(file)
       )}
     </div>
-  )
-}
+  );
+};
 
-export default function Galery() {
-  
+type GaleryProps = {
+  getFiles: (images: FileWithPreview[]) => void;
+};
 
-
-
-/// IMAGE GALERY
-  const maxSizeMB = 5
-  const maxSize = maxSizeMB * 1024 * 1024 
-  const maxFiles = 10
+export default function Galery({ getFiles }: GaleryProps) {
+  /// IMAGE GALERY
+  const maxSizeMB = 5;
+  const maxSize = maxSizeMB * 1024 * 1024;
+  const maxFiles = 10;
 
   const [
     { files, isDragging, errors },
@@ -102,12 +98,16 @@ export default function Galery() {
     multiple: true,
     maxFiles,
     maxSize,
-    accept:"image/png ,image/jpeg " 
-  })
+    accept: "image/png ,image/jpeg ",
+  });
+
+  useEffect(() => {
+
+    getFiles(files);
+  }, [files]);
 
   return (
     <div className="flex flex-col gap-2  w-full  rounded-md ">
-    
       {/* Drop area */}
       <div
         onDragEnter={handleDragEnter}
@@ -130,19 +130,29 @@ export default function Galery() {
                 Fotos ({files.length})
               </h3>
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={openFileDialog}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={openFileDialog}
+                >
                   <UploadIcon
                     className="-ms-0.5 size-3.5 opacity-60"
                     aria-hidden="true"
                   />
                   Adicionar foto
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={clearFiles}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearFiles}
+                >
                   <Trash2Icon
                     className="-ms-0.5 size-3.5 opacity-60"
                     aria-hidden="true"
                   />
-                 Remover todas
+                  Remover todas
                 </Button>
               </div>
             </div>
@@ -185,7 +195,13 @@ export default function Galery() {
             <p className="text-muted-foreground text-xs">
               Máximo de {maxFiles} fotos ∙ Até {maxSizeMB}MB
             </p>
-            <Button type="button" type="button" variant="outline" className="mt-4 text-sm text-muted-foreground cursor-pointer" onClick={openFileDialog}  >
+            <Button
+              type="button"
+              type="button"
+              variant="outline"
+              className="mt-4 text-sm text-muted-foreground cursor-pointer"
+              onClick={openFileDialog}
+            >
               <UploadIcon className="-ms-1 " aria-hidden="true" />
               Selecione imagens
             </Button>
@@ -202,7 +218,6 @@ export default function Galery() {
           <span>{errors[0]}</span>
         </div>
       )}
-
     </div>
-  )
+  );
 }
