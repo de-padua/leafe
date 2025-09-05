@@ -1,18 +1,10 @@
 "use client";
 import Galery from "@/components/anuncio/galery";
-import React, {
-  HTMLElementType,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-
-import { ParagraphNode, SerializedEditorState, TextNode } from "lexical";
+import Link from "next/link";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Editor } from "@/components/blocks/editor-00/editor";
 import {
   Form,
   FormControl,
@@ -25,61 +17,47 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowRightIcon,
-  Bath,
-  Bed,
-  ChevronDownIcon,
-  ChevronUpIcon,
+  Building,
+  CheckCircle,
+  CircleCheck,
+  CpuIcon,
   DollarSignIcon,
-  Eclipse,
-  EclipseIcon,
-  Ruler,
+  House,
+  HousePlug,
+  ImageIcon,
+  InfoIcon,
+  LoaderIcon,
+  LoaderPinwheel,
+  Shield,
+  Theater,
+  TreePalmIcon,
 } from "lucide-react";
 import {
   Button as AriaButton,
-  Group,
   Input as AriaInput,
   Label,
-  NumberField,
+  Tree,
 } from "react-aria-components";
 
 import { useForm } from "react-hook-form";
-import { InitialConfigType } from "@lexical/react/LexicalComposer";
-import { editorTheme } from "@/components/editor/themes/editor-theme";
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import { ToolbarPlugin } from "@/components/editor/plugins/toolbar/toolbar-plugin";
-import { FontFormatToolbarPlugin } from "@/components/editor/plugins/toolbar/font-format-toolbar-plugin";
 
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
-import { AspectRatio, Select } from "radix-ui";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+
 import dynamic from "next/dynamic";
-import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+
+import * as RadioGroup_1 from "@radix-ui/react-radio-group";
+
 import { SizeIcon } from "@radix-ui/react-icons";
-import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { v4 as uuidv4 } from "uuid";
-import { Content } from "@tiptap/react";
 import { MinimalTiptapEditor } from "@/components/ui/minimal-tiptap";
 import { FileWithPreview } from "@/hooks/use-file-upload";
-import supaclient from "@/supabase";
-import { _uuidv4 } from "zod/v4/core";
+import { Checkbox } from "@/components/ui/checkbox";
+import CheckboxCardDemo from "@/components/customized/checkbox/checkbox-11";
+import { fi } from "zod/v4/locales";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
@@ -110,18 +88,23 @@ const useMap = dynamic(
   { ssr: false }
 );
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 const formSchema = z
   .object({
     title: z
       .string()
       .min(5, { message: "O título precisa ter no mínimo 5 caracteres" })
       .max(50, { message: "O título pode ter no máximo 50 caracteres" }),
-
     description: z
       .string()
       .min(10, { message: "A descrição precisa ter no mínimo 10 caracteres" })
       .max(700, { message: "A descrição pode ter no máximo 700 caracteres" }),
-
     log: z.string().min(5, {
       message: "O logradouro precisa ter no mínimo 5 caracteres",
     }),
@@ -137,8 +120,6 @@ const formSchema = z
     CEP: z.string().length(8, {
       message: "CEP deve ter 8 dígitos no formato XXXXX-XXX",
     }),
-
-    // Quantitativos
     rooms: z.enum(["0", "1", "2", "3", "4", "5"], {
       required_error:
         "Você precisa selecionar quantos quartos o imóvel possui.",
@@ -154,7 +135,7 @@ const formSchema = z
       required_error:
         "Você precisa selecionar quantos dormitórios o imóvel possui.",
     }),
-    floors: z.enum(["terreo", "1", "2", "3", "4", "5"], {
+    floors: z.enum(["0", "1", "2", "3", "4", "5"], {
       required_error:
         "Você precisa selecionar quantos andares o imóvel possui.",
     }),
@@ -179,16 +160,26 @@ const formSchema = z
     type: z.enum(["HOUSE", "AP", "LAND"], {
       required_error: "Você precisa selecionar o tipo de imóvel.",
     }),
-    area: z.coerce.number().transform((v) => Number(v) || 0),
-    built: z.coerce.number(),
+    area: z.coerce
+      .number({
+        invalid_type_error: "A área do imóvel deve ser um número válido.",
+      })
+      .min(1, { message: "Informe a área total do imóvel em m²." })
+      .transform((v) => Number(v) || 0),
+
+    built: z.coerce
+      .number({
+        invalid_type_error: "A área construída deve ser um número válido.",
+      })
+      .min(0, { message: "A área construída não pode ser negativa." }),
+    financeBanks: z.array(z.string()),
     pool_size: z.coerce.number().optional(),
     gatedCommunity_price: z.coerce.number(),
-
-    // Booleanos (checkboxes)
     furnished: z.boolean(),
     pool: z.boolean(),
     gym: z.boolean(),
     security: z.boolean(),
+    isFinan: z.boolean(),
     elevator: z.boolean(),
     accessible: z.boolean(),
     balcony: z.boolean(),
@@ -212,9 +203,81 @@ const formSchema = z
     bikeRack: z.boolean(),
     coWorkingSpace: z.boolean(),
     petFriendly: z.boolean(),
+    /* 🏢 Estrutura */
+    concierge: z.boolean(),
+    backupGenerator: z.boolean(),
+    waterReservoir: z.boolean(),
+    serviceElevator: z.boolean(),
+    coveredParking: z.boolean(),
+    visitorParking: z.boolean(),
+    carWash: z.boolean(),
+
+    /* 🏊‍♂️ Lazer e esportes */
+    sportsCourt: z.boolean(),
+    tennisCourt: z.boolean(),
+    squashCourt: z.boolean(),
+    soccerField: z.boolean(),
+    skatePark: z.boolean(),
+    runningTrack: z.boolean(),
+    playground: z.boolean(),
+    kidsRoom: z.boolean(),
+    gameRoom: z.boolean(),
+    cinemaRoom: z.boolean(),
+    musicStudio: z.boolean(),
+    spa: z.boolean(),
+    sauna: z.boolean(),
+    jacuzzi: z.boolean(),
+    heatedPool: z.boolean(),
+    indoorPool: z.boolean(),
+    kidsPool: z.boolean(),
+
+    /* 🌳 Áreas verdes e sociais */
+    communityGarden: z.boolean(),
+    orchard: z.boolean(),
+    meditationSpace: z.boolean(),
+    hammockArea: z.boolean(),
+    gourmetBarbecue: z.boolean(),
+    pizzaOven: z.boolean(),
+    firePit: z.boolean(),
+    outdoorLounge: z.boolean(),
+    panoramicDeck: z.boolean(),
+    rooftop: z.boolean(),
+
+    /* 🛠️ Conforto e tecnologia */
+    centralHeating: z.boolean(),
+    centralCooling: z.boolean(),
+    centralVacuum: z.boolean(),
+    homeAutomation: z.boolean(),
+    fiberInternet: z.boolean(),
+    cableTvReady: z.boolean(),
+    soundSystem: z.boolean(),
+    smartLighting: z.boolean(),
+    soundProofing: z.boolean(),
+
+    /* 🛡️ Segurança extra */
+    securityRoom: z.boolean(),
+    qrAccess: z.boolean(),
+    facialRecognition: z.boolean(),
+    panicButton: z.boolean(),
+    automaticGate: z.boolean(),
+
+    /* 🛎️ Serviços e conveniência */
+    housekeeping: z.boolean(),
+    laundryService: z.boolean(),
+    coffeeShop: z.boolean(),
+    miniMarket: z.boolean(),
+    privateOffices: z.boolean(),
+    deliveryRoom: z.boolean(),
+    petCare: z.boolean(),
+    carSharing: z.boolean(),
+    bikeSharing: z.boolean(),
+    driverLounge: z.boolean(),
+    pictures: z
+      .array(z.any())
+      .min(1, { message: "Envie pelo menos uma foto." }),
   })
   .superRefine((data, ctx) => {
-    if (data.type === "casa" && !data.area) {
+    if (data.type === "HOUSE" && !data.area && data.area === undefined) {
       ctx.addIssue({
         path: ["area"],
         code: z.ZodIssueCode.custom,
@@ -226,14 +289,14 @@ const formSchema = z
         message: "Campo obrigatório para casa",
       });
     }
-    if (data.type === "ap" && !data.built) {
+    if (data.type === "AP" && !data.built) {
       ctx.addIssue({
         path: ["built"],
         code: z.ZodIssueCode.custom,
         message: "Área construída é obrigatória para apartamento.",
       });
     }
-    if (data.type === "terreno" && !data.area) {
+    if (data.type === "LAND" && !data.area) {
       ctx.addIssue({
         path: ["area"],
         code: z.ZodIssueCode.custom,
@@ -247,19 +310,18 @@ function page() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      description: "aaaaaaaaaa",
+      description: "",
       street: "",
       city: "",
       estate: "",
       CEP: "",
       log: "",
-      type: "HOUSE",
-      // Quantitativos (usar string pq seu schema usa z.enum)
+      type: undefined,
       rooms: "1",
       bathrooms: "1",
       garage: "1",
       bedrooms: "1",
-      floors: "1",
+      floors: "0",
       age: 0,
       stage: 0,
       area: 0,
@@ -267,7 +329,10 @@ function page() {
       pool_size: 0,
       price: 0,
       gatedCommunity_price: 0,
-      // Booleanos
+      isFinan: false,
+      financeBanks: [],
+      pictures: [],
+      /* Existentes */
       furnished: false,
       pool: false,
       gym: false,
@@ -295,13 +360,82 @@ function page() {
       bikeRack: false,
       coWorkingSpace: false,
       petFriendly: false,
+
+      /* 🏢 Estrutura */
+      concierge: false,
+      backupGenerator: false,
+      waterReservoir: false,
+      serviceElevator: false,
+      coveredParking: false,
+      visitorParking: false,
+      carWash: false,
+
+      /* 🏊‍♂️ Lazer e esportes */
+      sportsCourt: false,
+      tennisCourt: false,
+      squashCourt: false,
+      soccerField: false,
+      skatePark: false,
+      runningTrack: false,
+      playground: false,
+      kidsRoom: false,
+      gameRoom: false,
+      cinemaRoom: false,
+      musicStudio: false,
+      spa: false,
+      sauna: false,
+      jacuzzi: false,
+      heatedPool: false,
+      indoorPool: false,
+      kidsPool: false,
+
+      /* 🌳 Áreas verdes e sociais */
+      communityGarden: false,
+      orchard: false,
+      meditationSpace: false,
+      hammockArea: false,
+      gourmetBarbecue: false,
+      pizzaOven: false,
+      firePit: false,
+      outdoorLounge: false,
+      panoramicDeck: false,
+      rooftop: false,
+
+      /* 🛠️ Conforto e tecnologia */
+      centralHeating: false,
+      centralCooling: false,
+      centralVacuum: false,
+      homeAutomation: false,
+      fiberInternet: false,
+      cableTvReady: false,
+      soundSystem: false,
+      smartLighting: false,
+      soundProofing: false,
+
+      /* 🛡️ Segurança extra */
+      securityRoom: false,
+      qrAccess: false,
+      facialRecognition: false,
+      panicButton: false,
+      automaticGate: false,
+
+      /* 🛎️ Serviços e conveniência */
+      housekeeping: false,
+      laundryService: false,
+      coffeeShop: false,
+      miniMarket: false,
+      privateOffices: false,
+      deliveryRoom: false,
+      petCare: false,
+      carSharing: false,
+      bikeSharing: false,
+      driverLounge: false,
     },
   });
-
-  const [editorState, setEditorState] = useState<SerializedEditorState>();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPostCreated, setPostCreatedStatus] = useState(false);
   const [cepLoad, setCepLoad] = useState<boolean>(false);
   const [geo, setGeo] = useState<null | { lng: string; lat: string }>(null);
-  const [adress, setAdress] = useState<null | string>(null);
   const [adFiles, setFiles] = useState<FileWithPreview[]>([]);
 
   const getUserAdress = async (cep: string) => {
@@ -315,10 +449,6 @@ function page() {
       const data = await adress.json();
 
       setCepLoad(false);
-
-      const endereco = `${data.logradouro}, ${data.localidade}, ${data.uf}`;
-
-      setAdress(endereco);
 
       if (data.erro === "true") {
         form.setError("CEP", { message: "CEP não encontrado ou inválido." });
@@ -342,11 +472,13 @@ function page() {
     }
   };
 
-  const x = form.watch("CEP");
-
+  const cepFormWatcher = form.watch("CEP");
+  const isPoolMarked = form.watch("pool");
+  const isGatedComunity = form.watch("gatedCommunity");
+  const isFinan = form.watch("isFinan");
   const cepRef = useRef<HTMLInputElement>(null);
 
-  const handleInputChange = (ref: React.RefObject<HTMLInputElement>) => {
+  const handleInputChange = (ref: React.RefObject<HTMLInputElement | null>) => {
     if (ref.current) {
       const formattedValue = formatarCep(ref.current.value);
       form.setValue("CEP", formattedValue);
@@ -357,72 +489,72 @@ function page() {
     return value.replace(/\D/g, "");
   };
 
-  useEffect(() => {
-    if (x.length === 8) {
-      getUserAdress(x);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (adFiles.length === 0) {
+      form.setError("pictures" as any, {
+        message: "Envie pelo menos uma foto.",
+      });
+      return;
     }
 
-    handleInputChange(cepRef);
-  }, [x]);
+    setIsLoading(true);
 
- async function onSubmit(values: z.infer<typeof formSchema>) {
-  if (adFiles.length === 0) {
-    form.setError("root", {
-      message: "Envie pelo menos uma foto do imóvel.",
+    const postId = uuidv4();
+
+    const { pictures, ...body } = values;
+
+    const requestAdJSON = {
+      ...body,
+      postId,
+      rooms: Number(values.rooms),
+      bathrooms: Number(values.bathrooms),
+      garage: Number(values.garage),
+      bedrooms: Number(values.bedrooms),
+      floors: Number(values.floors),
+    };
+
+    const data = await fetch(`http://localhost:5000/anuncio`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestAdJSON),
     });
-    return;
+
+    const response = await data.json();
+
+    if (!response.success) {
+      form.setError("root", {
+        message: "Erro ao criar anúncio. Tente novamente.",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const isPicturesUploaded = await sendPictures(adFiles, postId);
+
+    if (isPicturesUploaded !== true) {
+      form.setError("root", {
+        message: "Erro ao enviar imagens. Tente novamente.",
+      });
+
+      setIsLoading(false);
+
+      return;
+    }
+
+    setIsLoading(false);
+    setPostCreatedStatus(true);
+    console.log("Imagens enviadas com sucesso!");
   }
-
-  const postId = uuidv4();
-
-  const adBody = {
-    ...values,
-    postId,
-    rooms: Number(values.rooms),
-    bathrooms: Number(values.bathrooms),
-    garage: Number(values.garage),
-    bedrooms: Number(values.bedrooms),
-    floors: Number(values.floors),
-  };
-
-  // 🔹 Primeiro cria o anúncio
-  const data = await fetch(`http://localhost:5000/anuncio`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(adBody),
-  });
-
-  const response = await data.json();
-  console.log("Anúncio criado:", response);
-
-  if (!response.success) {
-    form.setError("root", {
-      message: "Erro ao criar anúncio. Tente novamente.",
-    });
-    return;
-  }
-
-  const isPicturesUploaded = await sendPictures(adFiles, postId);
-
-  if (isPicturesUploaded.data.success !== "ok") {
-    form.setError("root", {
-      message: "Erro ao enviar imagens. Tente novamente.",
-    });
-    return;
-  }
-
-  console.log("Imagens enviadas com sucesso!");
-}
 
   async function sendPictures(files: FileWithPreview[], postId: string) {
     const formData = new FormData();
 
     adFiles.forEach((photo) => {
-      formData.append("files", photo.file as File)
-      formData.append("id", postId); 
+      formData.append("files", photo.file as File);
+      formData.append("id", postId);
     });
 
     const data = await fetch(`http://localhost:5000/anuncio/pictures`, {
@@ -433,16 +565,69 @@ function page() {
     });
     const response = await data.json();
 
-    console.log(response);
-    return response;
+    return response.success;
   }
-
 
   type FormValues = z.infer<typeof formSchema>;
 
   const handleNumericFields = (value: any, formName: keyof FormValues) => {
     form.setValue(formName, value);
   };
+
+  const getFiles = async (files: FileWithPreview[]) => {
+    setFiles(files);
+    form.setValue("pictures", files);
+  };
+
+  async function getCoordsByCEP(cepreq: string) {
+    setGeo(null);
+    const cep = cepreq.slice(0, 7).concat("0");
+    const viaCepRes = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await viaCepRes.json();
+
+    const endereco = `${data.logradouro}, ${data.localidade}, ${data.uf}, Brasil`;
+
+    const nominatimRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+        endereco
+      )}&format=json&addressdetails=1&limit=1`
+    );
+    const geo = await nominatimRes.json();
+
+    if (geo.length === 0) return;
+
+    setGeo({ lat: geo[0].lat, lng: geo[0].lon });
+  }
+
+  const formatCurrency = (value: string | number): string => {
+    const numberValue =
+      typeof value === "string"
+        ? Number(value.replace(/\D/g, "")) / 100
+        : value;
+
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numberValue);
+  };
+  const [accordionValue, setAccordionValue] = React.useState("");
+  useEffect(() => {
+    if (cepFormWatcher.length === 8) {
+      getUserAdress(cepFormWatcher);
+    }
+
+    if (cepRef !== null) handleInputChange(cepRef);
+    if (!isPoolMarked) form.setValue("pool_size", 0);
+    if (!isGatedComunity) form.setValue("gatedCommunity_price", 0);
+    if (!isFinan){ 
+      form.setValue("financeBanks", [])  
+      setAccordionValue("") }
+    if (isFinan) {
+      setAccordionValue("financeBanks");
+    }
+  }, [cepFormWatcher, isGatedComunity, isPoolMarked, isFinan]);
 
   const types = [
     {
@@ -598,9 +783,20 @@ function page() {
     { value: "4", label: "4" },
     { value: "5", label: "5" },
   ];
-
+  const financeBanks = [
+    { value: "itau", label: "Itaú Unibanco", Icon: "", defaultChecked: true },
+    { value: "bb", label: "Banco do Brasil", Icon: "" },
+    { value: "bradesco", label: "Bradesco", Icon: "" },
+    { value: "caixa", label: "Caixa Econômica", Icon: "" },
+    { value: "santander", label: "Santander Brasil", Icon: "" },
+    { value: "btg", label: "BTG Pactual", Icon: "" },
+    { value: "sicredi", label: "Sicredi", Icon: "" },
+    { value: "sicoob", label: "Sicoob", Icon: "" },
+    { value: "safra", label: "Banco Safra", Icon: "" },
+    { value: "citibank", label: "Citibank Brasil", Icon: "" },
+  ] as const;
   const andares = [
-    { value: "terreo", label: "Térreo" },
+    { value: "0", label: "Térreo" },
     { value: "1", label: "1" },
     { value: "2", label: "2" },
     { value: "3", label: "3" },
@@ -1211,79 +1407,1210 @@ function page() {
         />
       ),
     },
+    {
+      name: "concierge",
+      label: "Concierge",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="concierge"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Concierge</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "backupGenerator",
+      label: "Gerador de energia",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="backupGenerator"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Gerador de energia</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "waterReservoir",
+      label: "Reservatório de água",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="waterReservoir"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reservatório de água</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "serviceElevator",
+      label: "Elevador de serviço",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="serviceElevator"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Elevador de serviço</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "coveredParking",
+      label: "Estacionamento coberto",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="coveredParking"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estacionamento coberto</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "visitorParking",
+      label: "Estacionamento visitantes",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="visitorParking"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estacionamento visitantes</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "carWash",
+      label: "Lava-carros",
+      category: "estrutura",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="carWash"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Lava-carros</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "sportsCourt",
+      label: "Quadra poliesportiva",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="sportsCourt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quadra poliesportiva</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "tennisCourt",
+      label: "Quadra de tênis",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="tennisCourt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quadra de tênis</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "squashCourt",
+      label: "Quadra de squash",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="squashCourt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quadra de squash</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "soccerField",
+      label: "Campo de futebol",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="soccerField"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Campo de futebol</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "skatePark",
+      label: "Pista de skate",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="skatePark"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pista de skate</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "runningTrack",
+      label: "Pista de corrida",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="runningTrack"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pista de corrida</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "playground",
+      label: "Playground",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="playground"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Playground</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "kidsRoom",
+      label: "Brinquedoteca",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="kidsRoom"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Brinquedoteca</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "gameRoom",
+      label: "Sala de jogos",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="gameRoom"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sala de jogos</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "cinemaRoom",
+      label: "Sala de cinema",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="cinemaRoom"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sala de cinema</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "musicStudio",
+      label: "Estúdio de música",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="musicStudio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estúdio de música</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "spa",
+      label: "Spa",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="spa"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Spa</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "sauna",
+      label: "Sauna",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="sauna"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sauna</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "jacuzzi",
+      label: "Jacuzzi",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="jacuzzi"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Jacuzzi</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "heatedPool",
+      label: "Piscina aquecida",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="heatedPool"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Piscina aquecida</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "indoorPool",
+      label: "Piscina coberta",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="indoorPool"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Piscina coberta</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "kidsPool",
+      label: "Piscina infantil",
+      category: "lazer",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="kidsPool"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Piscina infantil</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "communityGarden",
+      label: "Horta comunitária",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="communityGarden"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Horta comunitária</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "orchard",
+      label: "Pomar",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="orchard"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Pomar</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "meditationSpace",
+      label: "Espaço de meditação",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="meditationSpace"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Espaço de meditação</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "hammockArea",
+      label: "Área de redes",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="hammockArea"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Área de redes</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "gourmetBarbecue",
+      label: "Churrasqueira gourmet",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="gourmetBarbecue"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Churrasqueira gourmet</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "pizzaOven",
+      label: "Forno de pizza",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="pizzaOven"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Forno de pizza</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "firePit",
+      label: "Fogueira",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="firePit"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fogueira</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "outdoorLounge",
+      label: "Lounge externo",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="outdoorLounge"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Lounge externo</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "panoramicDeck",
+      label: "Deck panorâmico",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="panoramicDeck"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Deck panorâmico</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "rooftop",
+      label: "Rooftop",
+      category: "verdeSocial",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="rooftop"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Rooftop</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "centralHeating",
+      label: "Aquecimento central",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="centralHeating"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Aquecimento central</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "centralCooling",
+      label: "Resfriamento central",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="centralCooling"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Resfriamento central</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "centralVacuum",
+      label: "Aspiração central",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="centralVacuum"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Aspiração central</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "homeAutomation",
+      label: "Automação residencial",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="homeAutomation"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Automação residencial</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "fiberInternet",
+      label: "Internet fibra óptica",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="fiberInternet"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Internet fibra óptica</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "cableTvReady",
+      label: "Preparado para TV a cabo",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="cableTvReady"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Preparado para TV a cabo</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "soundSystem",
+      label: "Sistema de som",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="soundSystem"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Sistema de som</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "smartLighting",
+      label: "Iluminação inteligente",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="smartLighting"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Iluminação inteligente</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "soundProofing",
+      label: "Isolamento acústico",
+      category: "confortoTecnologia",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="soundProofing"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Isolamento acústico</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "securityRoom",
+      label: "Central de segurança",
+      category: "segurancaExtra",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="securityRoom"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Central de segurança</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "qrAccess",
+      label: "Acesso via QR code",
+      category: "segurancaExtra",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="qrAccess"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Acesso via QR code</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "facialRecognition",
+      label: "Reconhecimento facial",
+      category: "segurancaExtra",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="facialRecognition"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reconhecimento facial</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "panicButton",
+      label: "Botão de pânico",
+      category: "segurancaExtra",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="panicButton"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Botão de pânico</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
+    {
+      name: "automaticGate",
+      label: "Portão automático",
+      category: "segurancaExtra",
+      options: booleanOptions,
+      form: (
+        <FormField
+          control={form.control}
+          name="automaticGate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Portão automático</FormLabel>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ),
+    },
   ];
 
-  const getFiles = async (files: FileWithPreview[]) => {
-    setFiles(files);
-  };
-  async function getCoordsByCEP(cepreq: string) {
-    setGeo(null);
-    const cep = cepreq.slice(0, 7).concat("0");
-    const viaCepRes = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const data = await viaCepRes.json();
-
-    const endereco = `${data.logradouro}, ${data.localidade}, ${data.uf}, Brasil`;
-
-    const nominatimRes = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-        endereco
-      )}&format=json&addressdetails=1&limit=1`
-    );
-    const geo = await nominatimRes.json();
-
-    if (geo.length === 0)
-      throw new Error("Não foi possível encontrar coordenadas");
-
-    setGeo({ lat: geo[0].lat, lng: geo[0].lon });
+  if (isPostCreated) {
+    return <Success />;
   }
 
-  const isDark = "dark";
-
-  const formatCurrency = (value: string | number): string => {
-    // Converte para número se for string
-    const numberValue =
-      typeof value === "string"
-        ? Number(value.replace(/\D/g, "")) / 100
-        : value;
-
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(numberValue);
-  };
-
-  const [value, setValue] = useState<Content>(null);
-
-  useEffect(() => {
-    const isPoolMarked = form.watch("pool");
-    const isGatedComunity = form.watch("gatedCommunity");
-
-    if (!isPoolMarked) form.setValue("pool_size", 0);
-    if (!isGatedComunity) form.setValue("gatedCommunity_price", 0);
-  }, []);
-
+  if (isLoading) {
+    return (
+      <LoaderCustom className=" h-screen flex flex-col items-center justify-center space-y-4 p-6">
+        <LoaderIcon className="h-12 w-12 animate-spin e drop-shadow-lg" />
+        <h2 className="text-xl font-semibold tracking-wide text-center">
+          Aguarde, estamos criando seu post...
+        </h2>
+        <p className="text-sm  text-center">Isso pode levar alguns segundos.</p>
+      </LoaderCustom>
+    );
+  }
   return (
     <div className="">
-      <Main>
-        <Header>
-          <Title>🏡 Anuncie seu imóvel</Title>
-          <Description>
-            Em poucos passos você poderá criar um anúncio completo do seu
-            imóvel. Informe o título, descrição, valores, características e
-            adicione fotos para aumentar suas chances de venda ou aluguel.
-          </Description>
-        </Header>
-      </Main>
       <div className="flex items-center justify-center flex-col ">
-        <div className="relative   w-full">
+        <div className="flex flex-col lg:p-30 lg:py-10 w-full p-5 ">
+          <div className="space-y-3 border-b pb-4">
+            <h2 className="text-2xl  lg:text-4xl font-semibold">
+              Crie seu anúncio em poucos passos
+            </h2>
+            <p className="text-xs  lg:text-sm text-muted-foreground">
+              Preencha as informações abaixo para cadastrar seu imóvel. Os
+              campos obrigatórios estão marcados com{" "}
+              <span className="text-red-500">*</span>.
+            </p>
+            <div className=" ">
+              <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
+                <li>
+                  Preencha todos os campos marcados com{" "}
+                  <span className="text-red-500">*</span>.
+                </li>
+                <li>Use informações reais e claras sobre o imóvel.</li>
+                <li>
+                  Informe valores em{" "}
+                  <span className="font-medium">Reais (R$)</span>.
+                </li>
+                <li>Fotos: máximo 10 arquivos de até 5MB cada.</li>
+                <li>Revise os dados antes de publicar o anúncio.</li>
+              </ul>
+            </div>
+          </div>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="w-full flex justify-center items-start px-20"
+              className="w-full   lg:flex flex-col lg:flex-row lg:justify-center lg:items-start "
             >
-              <div className="w-3/5">
+              <div className=" w-full lg:w-2/3">
                 <Main>
                   <Header>
                     <Title>Adicione um título</Title>
@@ -1315,184 +2642,347 @@ function page() {
                         Descreva seu imóvel{" "}
                         <span className="text-sm text-red-700">*</span>
                       </h2>
-                      <MinimalTiptapEditor
-                        value={value}
-                        onChange={(value) => {
-                          form.setValue("description", value as string);
-                        }}
-                        className="w-full"
-                        editorContentClassName="p-5"
-                        output="html"
-                        placeholder="Descreva a propiedade"
-                        editable={true}
-                        editorClassName="focus:outline-hidden"
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl className="">
+                              <MinimalTiptapEditor
+                                onChange={(value) => {
+                                  form.setValue("description", value as string);
+                                }}
+                                className="w-full"
+                                editorContentClassName="p-5"
+                                output="html"
+                                placeholder="Descreva a propiedade"
+                                editable={true}
+                                editorClassName="focus:outline-hidden"
+                              />
+                            </FormControl>
+
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                   </Body>
                 </Main>
                 <Main className="h-fit">
                   <Header>
-                    <Title>Valores e impostos</Title>
+                    <Title>Valores </Title>
                     <Description>
-                      Informe o preço de venda do imóvel e os impostos
-                      aplicáveis. Esses valores ajudarão os interessados a
-                      entender os custos totais.{" "}
+                      Informe o preço de venda do imóvel. Esses valores ajudarão
+                      os interessados a entender os custos totais.{" "}
                     </Description>
                   </Header>
-                  <Body className="grid grid-cols-3">
-                    <FormField
-                      control={form.control}
-                      name="price"
-                      render={({ field }) => (
-                        <FormItem className="gap-0">
-                          <FormLabel className={"font-semibold text-sm m-0"}>
-                            Valor da propiedade{" "}
-                            <span className="text-sm text-red-700">*</span>
-                          </FormLabel>
-                          <FormDescription
-                            className={"text-muted-foreground text-xs"}
-                          >
-                            Informe o valor da propiedade em Reais
-                          </FormDescription>
-                          <FormControl>
-                            <div className="relative flex rounded-md shadow-xs w-fit my-2">
-                              <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
-                                <DollarSignIcon className="h-4 w-4" />
-                              </span>
-                              <Input
-                                {...field}
-                                value={formatCurrency(field.value || "")}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // Remove tudo que não é número
-                                  const numericValue = value.replace(/\D/g, "");
-                                  // Converte para número e divide por 100 para ter decimais
-                                  const numberValue = numericValue
-                                    ? Number(numericValue) / 100
-                                    : "";
-                                  handleNumericFields(numberValue, "price");
-                                }}
-                                onBlur={(e) => {
-                                  // Garante que o valor fique formatado ao sair do campo
-                                  const value = e.target.value;
-                                  const numericValue = value.replace(/\D/g, "");
-                                  const numberValue = numericValue
-                                    ? Number(numericValue) / 100
-                                    : "";
-                                  field.onChange(numberValue);
-                                }}
-                                className="-me-px rounded-e-none ps-8 shadow-none"
-                                placeholder="R$ 0,00"
+                  <Body>
+                    <Body className="   grid gap-3 md:grid-cols-2 lg:grid-cols-3  border-none">
+                      <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                          <FormItem className="gap-0">
+                            <FormLabel className={"font-semibold text-sm m-0"}>
+                              Valor da propiedade{" "}
+                              <span className="text-sm text-red-700">*</span>
+                            </FormLabel>
+                            <FormDescription
+                              className={"text-muted-foreground text-xs"}
+                            >
+                              Informe o valor da propiedade em Reais
+                            </FormDescription>
+                            <FormControl>
+                              <div className=" flex rounded-md shadow-xs lg:w-fit my-2">
+                                <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1"></span>
+                                <Input
+                                  {...field}
+                                  value={formatCurrency(field.value || "")}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    const numericValue = value.replace(
+                                      /\D/g,
+                                      ""
+                                    );
+                                    const numberValue = numericValue
+                                      ? Number(numericValue)
+                                      : "";
+                                    handleNumericFields(numberValue, "price");
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = e.target.value;
+                                    const numericValue = value.replace(
+                                      /\D/g,
+                                      ""
+                                    );
+                                    const numberValue = numericValue
+                                      ? Number(numericValue)
+                                      : "";
+                                    field.onChange(numberValue);
+                                  }}
+                                  className="-me-px rounded-e-none shadow-none"
+                                  placeholder="R$ 0,00"
+                                />
+
+                                <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
+                                  Real
+                                </span>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="gatedCommunity"
+                        render={({ field }) => (
+                          <FormItem className="gap-0">
+                            <FormLabel
+                              className={
+                                form.getValues().gatedCommunity === true
+                                  ? "font-semibold text-sm  m-0 "
+                                  : "font-semibold text-sm text-muted-foreground m-0 "
+                              }
+                            >
+                              Valor do condomínio
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="mx-2  "
+                              />{" "}
+                            </FormLabel>
+                            <FormDescription
+                              className={
+                                form.getValues().pool === true
+                                  ? "text-muted-foreground text-xs"
+                                  : "text-muted-foreground text-xs"
+                              }
+                            >
+                              Informe o valor do condomínio em Reais
+                            </FormDescription>
+                            <FormControl>
+                              <FormField
+                                control={form.control}
+                                name="gatedCommunity_price"
+                                render={({ field }) => (
+                                  <FormItem className="">
+                                    <FormControl>
+                                      <div className="relative flex rounded-md shadow-xs  lg:w-fit my-2">
+                                        <Input
+                                          {...field}
+                                          disabled={
+                                            form.getValues().gatedCommunity
+                                              ? false
+                                              : true
+                                          }
+                                          value={formatCurrency(
+                                            field.value || ""
+                                          )}
+                                          onChange={(e) => {
+                                            const value = e.target.value;
+                                            const numericValue = value.replace(
+                                              /\D/g,
+                                              ""
+                                            );
+                                            const numberValue = numericValue
+                                              ? Number(numericValue)
+                                              : "";
+                                            handleNumericFields(
+                                              numberValue,
+                                              "gatedCommunity_price"
+                                            );
+                                          }}
+                                          onBlur={(e) => {
+                                            const value = e.target.value;
+                                            const numericValue = value.replace(
+                                              /\D/g,
+                                              ""
+                                            );
+                                            const numberValue = numericValue
+                                              ? Number(numericValue)
+                                              : "";
+                                            field.onChange(numberValue);
+                                          }}
+                                          className={
+                                            form.getValues().gatedCommunity
+                                              ? "-me-px rounded-e-none  shadow-none"
+                                              : "-me-px rounded-e-none  shadow-none text-muted-foreground"
+                                          }
+                                          placeholder="R$ 0,00"
+                                        />
+
+                                        <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
+                                          Real
+                                        </span>
+                                      </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
-
-                              <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
-                                BRL
-                              </span>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </Body>
+                    <Body className="border-none">
+                      <FormField
+                        control={form.control}
+                        name="isFinan"
+                        render={({ field }) => (
+                          <FormItem className="gap-0">
+                            <FormLabel
+                              className={
+                                form.getValues().isFinan === true
+                                  ? "font-semibold text-sm  m-0 "
+                                  : "font-semibold text-sm text-muted-foreground m-0 "
+                              }
+                            >
+                              Fincanciamento
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                className="mx-2"
+                              />
+                            </FormLabel>
+                            <FormDescription className="text-xs">
+                              Selecione bancos que aceitam financiamento dessa
+                              propriedade.
+                            </FormDescription>
+                            <div className="my-2">
+                              <div className="rounded-md border border-blue-500/50 px-4 py-3 text-blue-600">
+                                <p className=" text-xs text-start md:text-sm">
+                                  <InfoIcon
+                                    className=" hidden  me-3 -mt-0.5 md:inline-flex opacity-60"
+                                    size={16}
+                                    aria-hidden="true"
+                                  />
+                                  A seleção de bancos é opcional.
+                                </p>
+                              </div>
                             </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gatedCommunity"
-                      render={({ field }) => (
-                        <FormItem className="gap-0">
-                          <FormLabel
-                            className={
-                              form.getValues().gatedCommunity === true
-                                ? "font-semibold text-sm  m-0 "
-                                : "font-semibold text-sm text-muted-foreground m-0 "
-                            }
-                          >
-                            Valor do condomínio
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              className="mx-2  "
-                            />{" "}
-                          </FormLabel>
-                          <FormDescription
-                            className={
-                              form.getValues().pool === true
-                                ? "text-muted-foreground text-xs"
-                                : "text-muted-foreground text-xs"
-                            }
-                          >
-                            Informe o valor do condomínio em Reais
-                          </FormDescription>
-                          <FormControl>
-                            <FormField
-                              control={form.control}
-                              name="gatedCommunity_price"
-                              render={({ field }) => (
-                                <FormItem className="">
-                                  <FormControl>
-                                    <div className="relative flex rounded-md shadow-xs w-fit my-2">
-                                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
-                                        <DollarSignIcon className="h-4 w-4" />
-                                      </span>
-                                      <Input
-                                        {...field}
-                                        disabled={
-                                          form.getValues().gatedCommunity
-                                            ? false
-                                            : true
-                                        }
-                                        value={formatCurrency(
-                                          field.value || ""
-                                        )}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          // Remove tudo que não é número
-                                          const numericValue = value.replace(
-                                            /\D/g,
-                                            ""
-                                          );
-                                          // Converte para número e divide por 100 para ter decimais
-                                          const numberValue = numericValue
-                                            ? Number(numericValue) / 100
-                                            : "";
-                                          handleNumericFields(
-                                            numberValue,
-                                            "gatedCommunity_price"
-                                          );
-                                        }}
-                                        onBlur={(e) => {
-                                          // Garante que o valor fique formatado ao sair do campo
-                                          const value = e.target.value;
-                                          const numericValue = value.replace(
-                                            /\D/g,
-                                            ""
-                                          );
-                                          const numberValue = numericValue
-                                            ? Number(numericValue) / 100
-                                            : "";
-                                          field.onChange(numberValue);
-                                        }}
-                                        className={
-                                          form.getValues().gatedCommunity
-                                            ? "-me-px rounded-e-none ps-8 shadow-none"
-                                            : "-me-px rounded-e-none ps-8 shadow-none text-muted-foreground"
-                                        }
-                                        placeholder="R$ 0,00"
-                                      />
+                            <FormControl>
+                              <FormField
+                                control={form.control}
+                                name="financeBanks"
+                                render={({ field }) => (
+                                  <FormItem className="">
+                                    <FormControl>
+                                      <FormField
+                                        control={form.control}
+                                        name="financeBanks"
+                                        render={() => (
+                                          <FormItem  >
+                                            <Accordion
+                                              type="single"
+                                              collapsible={true}
+                                              
+                                              defaultValue="3"
+                                              value={accordionValue}
+                                              onValueChange={setAccordionValue}
 
-                                      <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
-                                        BRL
-                                      </span>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                                            >
+                                              <AccordionItem
+                                                value="financeBanks"
+                                                className="py-2"
+                                              >
+                                                <AccordionContent className="grid grid-cols-2 md:grid-cols-3 gap-2"> 
+                                                  {financeBanks.map((item) => (
+                                                    <FormField
+                                                      key={item.value}
+                                                      control={form.control}
+                                                      name="financeBanks"
+                                                      render={({ field }) => {
+                                                        return (
+                                                          <FormItem
+                                                            key={item.value}
+                                                          >
+                                                            <FormControl>
+                                                              <div
+                                                                key={`${item.value}`}
+                                                                className={
+                                                                  form.getValues()
+                                                                    .isFinan
+                                                                    ? "border-input has-data-[state=checked]:bg-neutral-100 has-data-[state=checked]:border-primary/50 relative flex cursor-pointer flex-col gap-4 rounded-md border p-4 shadow-xs outline-none"
+                                                                    : "border-input has-data-[state=checked]:bg-neutral-100 has-data-[state=checked]:border-primary/50 relative flex cursor-pointer flex-col gap-4 rounded-md border p-4 shadow-xs outline-none opacity-50"
+                                                                }
+                                                              >
+                                                                <div className="flex justify-between gap-2">
+                                                                  <Checkbox
+                                                                    disabled={
+                                                                      !form.getValues()
+                                                                        .isFinan
+                                                                    }
+                                                                    checked={field.value?.includes(
+                                                                      item.value
+                                                                    )}
+                                                                    onCheckedChange={(
+                                                                      checked
+                                                                    ) => {
+                                                                      return checked
+                                                                        ? field.onChange(
+                                                                            [
+                                                                              ...field.value,
+                                                                              item.value,
+                                                                            ]
+                                                                          )
+                                                                        : field.onChange(
+                                                                            field.value?.filter(
+                                                                              (
+                                                                                value
+                                                                              ) =>
+                                                                                value !==
+                                                                                item.value
+                                                                            )
+                                                                          );
+                                                                    }}
+                                                                    id={`${item.value}`}
+                                                                    value={
+                                                                      item.value
+                                                                    }
+                                                                    className="order-1 after:absolute after:inset-0"
+                                                                  />
+                                                                </div>
+                                                                <Label
+                                                                  className={
+                                                                    form.getValues()
+                                                                      .isFinan
+                                                                      ? "font-semibold text-xs m-0"
+                                                                      : "font-semibold text-xs text-muted-foreground m-0"
+                                                                  }
+                                                                  htmlFor={`${item.value}`}
+                                                                >
+                                                                  {item.label}
+                                                                </Label>
+                                                              </div>
+                                                            </FormControl>
+                                                          </FormItem>
+                                                        );
+                                                      }}
+                                                    />
+                                                  ))}
+                                                </AccordionContent>
+                                              </AccordionItem>
+                                            </Accordion>
+
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </Body>
                   </Body>
                 </Main>
                 <Main>
@@ -1520,7 +3010,7 @@ function page() {
                             <RadioGroup
                               onValueChange={field.onChange}
                               defaultValue={field.value}
-                              className="gap-x-2 grid grid-cols-3 my-2"
+                              className="gap-x-2 grid md:grid-cols-2 my-2"
                             >
                               {types.map((item, index) => (
                                 <div
@@ -1550,351 +3040,544 @@ function page() {
                         </FormItem>
                       )}
                     />
-                    <Body>
-                      <div className="grid grid-cols-3">
-                        {["HOUSE", "AP"].includes(form.watch().type) && (
-                          <div>
-                            <FormField
-                              control={form.control}
-                              name="built"
-                              render={({ field }) => (
-                                <FormItem className="gap-0">
-                                  <FormLabel
-                                    className={"font-semibold text-sm  m-0 "}
-                                  >
-                                    Área construída do imóvel{" "}
-                                    <span className="text-sm text-red-700">
-                                      *
-                                    </span>
-                                  </FormLabel>
-                                  <FormDescription
-                                    className={"text-muted-foreground text-xs"}
-                                  >
-                                    Descreva as dimenções da área construída
-                                    imóvel
-                                  </FormDescription>
-                                  <FormControl>
-                                    <div className="relative flex rounded-md shadow-xs w-fit my-2">
-                                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
-                                        <SizeIcon />
-                                      </span>
-                                      <Input
-                                        {...field}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          if (/^[0-9]*$/.test(value)) {
-                                            handleNumericFields(value, "built");
-                                          }
-                                        }}
-                                        className="-me-px rounded-e-none ps-8 shadow-none"
-                                        placeholder="10m²"
-                                      />
-                                      <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
-                                        m²
-                                      </span>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        )}
-
-                        {["HOUSE", "LAND"].includes(form.watch().type) && (
-                          <div>
-                            <FormField
-                              control={form.control}
-                              name="area"
-                              render={({ field }) => (
-                                <FormItem className="gap-0">
-                                  <FormLabel
-                                    className={"font-semibold text-sm  m-0 "}
-                                  >
-                                    Área da propiedade{" "}
-                                  </FormLabel>
-                                  <FormDescription
-                                    className={"text-muted-foreground text-xs"}
-                                  >
-                                    Descreva as dimenções da propiedade
-                                  </FormDescription>
-                                  <FormControl>
-                                    <div className="relative flex rounded-md shadow-xs w-fit my-2">
-                                      <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
-                                        <SizeIcon />
-                                      </span>
-                                      <Input
-                                        {...field}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          if (/^[0-9]*$/.test(value)) {
-                                            handleNumericFields(value, "area");
-                                          }
-                                        }}
-                                        className="-me-px rounded-e-none ps-8 shadow-none"
-                                        placeholder="10m²"
-                                      />
-
-                                      <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
-                                        m²
-                                      </span>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        )}
-                        {["HOUSE", "AP"].includes(form.watch().type) && (
-                          <div className="">
-                            <FormField
-                              control={form.control}
-                              name="pool"
-                              render={({ field }) => (
-                                <FormItem className="gap-0">
-                                  <FormLabel
-                                    className={
-                                      form.getValues().pool === true
-                                        ? "font-semibold text-sm  m-0 "
-                                        : "font-semibold text-sm text-muted-foreground m-0 "
-                                    }
-                                  >
-                                    Piscina
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                      className="mx-2"
-                                    />{" "}
-                                  </FormLabel>
-                                  <FormDescription
-                                    className={
-                                      form.getValues().pool === true
-                                        ? "text-muted-foreground text-xs"
-                                        : "text-muted-foreground text-xs"
-                                    }
-                                  >
-                                    Descreva as dimenções da piscina
-                                  </FormDescription>
-                                  <FormControl>
-                                    <FormField
-                                      control={form.control}
-                                      name="pool_size"
-                                      render={({ field }) => (
-                                        <FormItem className="">
-                                          <FormControl>
-                                            <div className="relative flex rounded-md shadow-xs w-fit my-2">
-                                              <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
-                                                <SizeIcon />
-                                              </span>
-                                              <Input
-                                                {...field}
-                                                onChange={(e) => {
-                                                  const value = e.target.value;
-                                                  if (/^[0-9]*$/.test(value)) {
-                                                    handleNumericFields(
-                                                      value,
-                                                      "pool_size"
-                                                    );
-                                                  }
-                                                }}
-                                                disabled={
-                                                  form.getValues().pool === true
-                                                    ? false
-                                                    : true
-                                                }
-                                                className="-me-px rounded-e-none ps-8 shadow-none"
-                                                placeholder="10m²"
-                                              />
-                                              <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
-                                                m²
-                                              </span>
-                                            </div>
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </Body>
-                    <Body className=" grid grid-cols-4 ">
-                      <FormField
-                        control={form.control}
-                        name="rooms"
-                        render={({ field }) => (
-                          <FormItem className="">
-                            <FormLabel>
-                              Quartos{" "}
-                              <span className="text-sm text-red-700">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="gap-0 h-fit"
-                              >
-                                {rooms.map((item) => (
-                                  <div
-                                    className="px-3 flex items-center gap-2"
-                                    key={item.value}
-                                  >
-                                    <RadioGroupItem
-                                      value={item.value}
-                                      id={item.label}
-                                    />
-                                    <Label
-                                      className="text-sm"
-                                      htmlFor={item.label}
-                                    >
-                                      {item.label}
-                                    </Label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="bathrooms"
-                        render={({ field }) => (
-                          <FormItem className="">
-                            <FormLabel>
-                              Banheiros{" "}
-                              <span className="text-sm text-red-700">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="gap-0"
-                              >
-                                {banheiros.map((item) => (
-                                  <div
-                                    className="px-3 flex items-center gap-2"
-                                    key={item.value}
-                                  >
-                                    <RadioGroupItem
-                                      value={item.value}
-                                      id={item.label}
-                                    />
-                                    <Label
-                                      className="text-sm"
-                                      htmlFor={item.label}
-                                    >
-                                      {item.label}
-                                    </Label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="bathrooms"
-                        render={({ field }) => (
-                          <FormItem className="">
-                            <FormLabel>
-                              Vagas de garagem{" "}
-                              <span className="text-sm text-red-700">*</span>
-                            </FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="gap-0"
-                              >
-                                {garagem.map((item) => (
-                                  <div
-                                    className="px-3 flex items-center gap-2"
-                                    key={item.value}
-                                  >
-                                    <RadioGroupItem
-                                      value={item.value}
-                                      id={item.label}
-                                    />
-                                    <Label
-                                      className="text-sm"
-                                      htmlFor={item.label}
-                                    >
-                                      {item.label}
-                                    </Label>
-                                  </div>
-                                ))}
-                              </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      {["casa"].includes(form.watch().type) && (
-                        <FormField
-                          control={form.control}
-                          name="floors"
-                          render={({ field }) => (
-                            <FormItem className="h-fit">
-                              <FormLabel>
-                                Quantidade de pisos do imóvel{" "}
-                              </FormLabel>
-                              <FormControl>
-                                <RadioGroup
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                  className="gap-0"
-                                >
-                                  {andares.map((item) => (
-                                    <div
-                                      className="px-3 flex items-center gap-2"
-                                      key={item.value}
-                                    >
-                                      <RadioGroupItem
-                                        value={item.value}
-                                        id={item.label}
-                                      />
-                                      <Label
-                                        className="text-sm"
-                                        htmlFor={item.label}
+                    {["HOUSE", "AP", "LAND"].includes(form.watch().type) && (
+                      <>
+                        {" "}
+                        <Body>
+                          <div className="grid md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
+                            {["HOUSE", "AP"].includes(form.watch().type) && (
+                              <div>
+                                <FormField
+                                  control={form.control}
+                                  name="built"
+                                  render={({ field }) => (
+                                    <FormItem className="gap-0">
+                                      <FormLabel
+                                        className={
+                                          "font-semibold text-sm  m-0 "
+                                        }
                                       >
-                                        {item.label}
-                                      </Label>
+                                        Área construída
+                                        <span className="text-sm text-red-700">
+                                          *
+                                        </span>
+                                      </FormLabel>
+                                      <FormDescription
+                                        className={
+                                          "text-muted-foreground text-xs"
+                                        }
+                                      >
+                                        Descreva as dimenções da área construída
+                                        imóvel
+                                      </FormDescription>
+                                      <FormControl>
+                                        <div className="relative flex rounded-md shadow-xs md:w-fit my-2">
+                                          <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
+                                            <SizeIcon />
+                                          </span>
+                                          <Input
+                                            {...field}
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+
+                                              if (value === "")
+                                                return form.setValue(
+                                                  "built",
+                                                  0
+                                                );
+
+                                              const numericValue =
+                                                value.replace(/\D/g, "");
+
+                                              form.setValue(
+                                                "built",
+                                                parseInt(numericValue)
+                                              );
+                                            }}
+                                            className="-me-px rounded-e-none ps-8 shadow-none"
+                                            placeholder="10m²"
+                                          />
+                                          <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
+                                            m²
+                                          </span>
+                                        </div>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            )}
+
+                            {["HOUSE", "LAND"].includes(form.watch().type) && (
+                              <div>
+                                <FormField
+                                  control={form.control}
+                                  name="area"
+                                  render={({ field }) => (
+                                    <FormItem className="gap-0">
+                                      <FormLabel
+                                        className={
+                                          "font-semibold text-sm  m-0 "
+                                        }
+                                      >
+                                        Área da propiedade{" "}
+                                        <span className="text-sm text-red-700">
+                                          *
+                                        </span>
+                                      </FormLabel>
+                                      <FormDescription
+                                        className={
+                                          "text-muted-foreground text-xs"
+                                        }
+                                      >
+                                        Descreva as dimenções da propiedade
+                                        (terreno)
+                                      </FormDescription>
+                                      <FormControl>
+                                        <div className="relative flex rounded-md shadow-xs  md:w-fit my-2">
+                                          <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
+                                            <SizeIcon />
+                                          </span>
+                                          <Input
+                                            {...field}
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+
+                                              if (value === "")
+                                                return form.setValue("area", 0);
+
+                                              const numericValue =
+                                                value.replace(/\D/g, "");
+
+                                              form.setValue(
+                                                "area",
+                                                parseInt(numericValue)
+                                              );
+                                            }}
+                                            className="-me-px rounded-e-none ps-8 shadow-none"
+                                            placeholder="10m²"
+                                          />
+
+                                          <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
+                                            m²
+                                          </span>
+                                        </div>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            )}
+                            {["HOUSE", "AP"].includes(form.watch().type) && (
+                              <div className="w-full">
+                                <FormField
+                                  control={form.control}
+                                  name="pool"
+                                  render={({ field }) => (
+                                    <FormItem className="gap-0">
+                                      <FormLabel
+                                        className={
+                                          form.getValues().pool === true
+                                            ? "font-semibold text-sm  m-0 "
+                                            : "font-semibold text-sm text-muted-foreground m-0 "
+                                        }
+                                      >
+                                        Piscina
+                                        <Switch
+                                          checked={field.value}
+                                          onCheckedChange={field.onChange}
+                                          className="mx-2"
+                                        />{" "}
+                                      </FormLabel>
+                                      <FormDescription
+                                        className={
+                                          form.getValues().pool === true
+                                            ? "text-muted-foreground text-xs"
+                                            : "text-muted-foreground text-xs"
+                                        }
+                                      >
+                                        Descreva as dimenções da piscina
+                                      </FormDescription>
+                                      <FormControl className="w-full bg-amber-300">
+                                        <FormField
+                                          control={form.control}
+                                          name="pool_size"
+                                          render={({ field }) => (
+                                            <FormItem className="w-full">
+                                              <FormControl>
+                                                <div className="relative flex rounded-md shadow-xs w-full md:w-fit my-2">
+                                                  <span className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 text-sm mr-1">
+                                                    <SizeIcon />
+                                                  </span>
+                                                  <Input
+                                                    {...field}
+                                                    onChange={(e) => {
+                                                      const value =
+                                                        e.target.value;
+
+                                                      if (value === "")
+                                                        return form.setValue(
+                                                          "pool_size",
+                                                          0
+                                                        );
+
+                                                      const numericValue =
+                                                        value.replace(
+                                                          /\D/g,
+                                                          ""
+                                                        );
+
+                                                      form.setValue(
+                                                        "pool_size",
+                                                        parseInt(numericValue)
+                                                      );
+                                                    }}
+                                                    disabled={
+                                                      form.getValues().pool ===
+                                                      true
+                                                        ? false
+                                                        : true
+                                                    }
+                                                    className="w-full  md:w-fit  -me-px rounded-e-none ps-8 shadow-none"
+                                                    placeholder="10m²"
+                                                  />
+                                                  <span className="border-input bg-background  md:w-fit text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
+                                                    m²
+                                                  </span>
+                                                </div>
+                                              </FormControl>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </Body>
+                        <Body className=" grid   grid-cols-2 2xl:grid-cols-4 gap-3 ">
+                          <FormField
+                            control={form.control}
+                            name="rooms"
+                            render={({ field }) => (
+                              <FormItem className="">
+                                <FormLabel>
+                                  Quartos{" "}
+                                  <span className="text-sm text-red-700">
+                                    *
+                                  </span>
+                                </FormLabel>
+                                <FormControl>
+                                  <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="grid gap-2 px-5"
+                                  >
+                                    {rooms.map((item) => (
+                                      <RadioGroup_1.Item
+                                        key={item.value}
+                                        value={item.value}
+                                        className={cn(
+                                          " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                          "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                        )}
+                                      >
+                                        <p className="">{item.label}</p>
+                                      </RadioGroup_1.Item>
+                                    ))}
+                                  </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="bathrooms"
+                            render={({ field }) => (
+                              <FormItem className="">
+                                <FormLabel>
+                                  Banheiros{" "}
+                                  <span className="text-sm text-red-700">
+                                    *
+                                  </span>
+                                </FormLabel>
+                                <FormControl>
+                                  <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="grid gap-2 px-5"
+                                  >
+                                    {banheiros.map((item) => (
+                                      <RadioGroup_1.Item
+                                        key={item.value}
+                                        value={item.value}
+                                        className={cn(
+                                          " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                          "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                        )}
+                                      >
+                                        <p className="">{item.label}</p>
+                                      </RadioGroup_1.Item>
+                                    ))}
+                                  </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="bathrooms"
+                            render={({ field }) => (
+                              <FormItem className="">
+                                <FormLabel>
+                                  Vagas de garagem{" "}
+                                  <span className="text-sm text-red-700">
+                                    *
+                                  </span>
+                                </FormLabel>
+                                <FormControl>
+                                  <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="grid gap-2 px-5"
+                                  >
+                                    {garagem.map((item) => (
+                                      <RadioGroup_1.Item
+                                        key={item.value}
+                                        value={item.value}
+                                        className={cn(
+                                          " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                          "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                        )}
+                                      >
+                                        <p className="">{item.label}</p>
+                                      </RadioGroup_1.Item>
+                                    ))}
+                                  </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          {["HOUSE"].includes(form.watch().type) && (
+                            <FormField
+                              control={form.control}
+                              name="floors"
+                              render={({ field }) => (
+                                <FormItem className="h-fit">
+                                  <FormLabel>Quantidade de pisos</FormLabel>
+                                  <FormControl>
+                                    <RadioGroup
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value}
+                                      className="grid gap-2 px-5"
+                                    >
+                                      {andares.map((item) => (
+                                        <RadioGroup_1.Item
+                                          key={item.value}
+                                          value={item.value}
+                                          className={cn(
+                                            " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                            "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                          )}
+                                        >
+                                          <p className="">{item.label}</p>
+                                        </RadioGroup_1.Item>
+                                      ))}
+                                    </RadioGroup>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </Body>
+                        <Tabs defaultValue="tab-1">
+                          <ScrollArea>
+                            <TabsList className="before:bg-border relative h-auto w-full gap-0.5 bg-transparent p-0 before:absolute before:inset-x-0 before:bottom-0 before:h-px">
+                              <TabsTrigger
+                                value="tab-1"
+                                className=" text-muted-foreground  bg-muted overflow-hidden rounded-b-none border-x border-t py-2 data-[state=active]:z-10 data-[state=active]:shadow-none"
+                              >
+                                Geral <House className="w-4 h-4 mx-1" />
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="tab-2"
+                                className="bg-muted overflow-hidden rounded-b-none border-x border-t py-2 data-[state=active]:z-10 data-[state=active]:shadow-none"
+                              >
+                                Segurança <Shield className="w-4 h-4 mx-1" />
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="tab-3"
+                                className="bg-muted overflow-hidden rounded-b-none border-x border-t py-2 data-[state=active]:z-10 data-[state=active]:shadow-none"
+                              >
+                                Tecnologia{" "}
+                                <HousePlug className="w-4 h-4 mx-1" />
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="tab-4"
+                                className="bg-muted overflow-hidden rounded-b-none border-x border-t py-2 data-[state=active]:z-10 data-[state=active]:shadow-none"
+                              >
+                                Verde social{" "}
+                                <TreePalmIcon className="w-4 h-4 mx-1" />
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="tab-5"
+                                className="bg-muted overflow-hidden rounded-b-none border-x border-t py-2 data-[state=active]:z-10 data-[state=active]:shadow-none"
+                              >
+                                Lazer <Theater className="w-4 h-4 mx-1" />
+                              </TabsTrigger>
+                              <TabsTrigger
+                                value="tab-6"
+                                className="bg-muted overflow-hidden rounded-b-none border-x border-t py-2 data-[state=active]:z-10 data-[state=active]:shadow-none"
+                              >
+                                Estrutura <Building className="w-4 h-4 mx-1" />
+                              </TabsTrigger>
+                            </TabsList>
+                            <ScrollBar
+                              orientation="horizontal"
+                              className="mt-2 hidden"
+                            />
+                          </ScrollArea>
+
+                          <TabsContent value="tab-1">
+                            <Body>
+                              <Header>
+                                <Title>Geral</Title>
+                              </Header>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {amenities
+                                  .filter((item) => item.category === undefined)
+                                  .map((item) => (
+                                    <div className="my-1" key={item.name}>
+                                      {item.form}
                                     </div>
                                   ))}
-                                </RadioGroup>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </Body>
-                    <div className="grid grid-cols-4">
-                      {amenities.map((i) => (
-                        <div className="my-1" key={i.name}>
-                          {i.form}
-                        </div>
-                      ))}
-                    </div>
+                              </div>
+                            </Body>
+                          </TabsContent>
+                          <TabsContent value="tab-2">
+                            <Body>
+                              <Header>
+                                <Title>Segurança</Title>
+                              </Header>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {amenities
+                                  .filter(
+                                    (item) => item.category === "segurancaExtra"
+                                  )
+                                  .map((item) => (
+                                    <div className="my-1" key={item.name}>
+                                      {item.form}
+                                    </div>
+                                  ))}
+                              </div>
+                            </Body>
+                          </TabsContent>
+                          <TabsContent value="tab-3">
+                            <Body>
+                              <Header>
+                                <Title>Tecnologia</Title>
+                              </Header>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {amenities
+                                  .filter(
+                                    (item) =>
+                                      item.category === "confortoTecnologia"
+                                  )
+                                  .map((item) => (
+                                    <div className="my-1" key={item.name}>
+                                      {item.form}
+                                    </div>
+                                  ))}
+                              </div>
+                            </Body>
+                          </TabsContent>
+                          <TabsContent value="tab-4">
+                            <Body>
+                              <Header>
+                                <Title>Verde social</Title>
+                              </Header>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {amenities
+                                  .filter(
+                                    (item) => item.category === "verdeSocial"
+                                  )
+                                  .map((item) => (
+                                    <div className="my-1" key={item.name}>
+                                      {item.form}
+                                    </div>
+                                  ))}
+                              </div>
+                            </Body>
+                          </TabsContent>
+                          <TabsContent value="tab-5">
+                            <Body>
+                              <Header>
+                                <Title>Lazer</Title>
+                              </Header>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {amenities
+                                  .filter((item) => item.category === "lazer")
+                                  .map((item) => (
+                                    <div className="my-1" key={item.name}>
+                                      {item.form}
+                                    </div>
+                                  ))}
+                              </div>
+                            </Body>
+                          </TabsContent>
+                          <TabsContent value="tab-6">
+                            <Body>
+                              <Header>
+                                <Title>Estrutura</Title>
+                              </Header>
+                              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                                {amenities
+                                  .filter(
+                                    (item) => item.category === "estrutura"
+                                  )
+                                  .map((item) => (
+                                    <div className="my-1" key={item.name}>
+                                      {item.form}
+                                    </div>
+                                  ))}
+                              </div>
+                            </Body>
+                          </TabsContent>
+                        </Tabs>
+                      </>
+                    )}
                   </Body>
                 </Main>
 
-                <Button>
-                  Criar novo anúncio <Plus />
+                {form.formState.errors.root && (
+                  <p className="text-xs text-red-400 my-4">
+                    {form.formState.errors.root.message}
+                  </p>
+                )}
+                <Button
+                  className="hidden lg:flex"
+                  disabled={isLoading ? true : false}
+                >
+                  Criar novo anúncio{" "}
+                  {isLoading ? (
+                    <LoaderIcon className="animate-spin" />
+                  ) : (
+                    <Plus />
+                  )}
                 </Button>
               </div>
-              <div className="w-1/3">
+              <div className=" w-full lg:w-1/3">
                 <Main>
                   <Header>
                     <Title>Endereço</Title>
@@ -2017,7 +3700,7 @@ function page() {
                       }}
                     >
                       <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
+                        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
                         subdomains={["a", "b", "c", "d"]}
                       />
@@ -2049,30 +3732,38 @@ function page() {
                 </div>
                 <Main>
                   <Header>
-                    <Title
-                      className={
-                        form.formState.errors.root ? "text-red-400" : ""
-                      }
-                    >
-                      Adicione fotos do imóvel
-                    </Title>
+                    <Title>Adicione fotos do imóvel</Title>
                     <Description>
                       Mostre seu imóvel da melhor forma com fotos de qualidade{" "}
                     </Description>
                   </Header>
-                  <Body
-                    className={
-                      form.formState.errors.root ? "border-red-400" : ""
-                    }
-                  >
-                    <Galery getFiles={getFiles} />
-                    {form.formState.errors.root && (
-                      <p className="text-xs text-red-400 my-2">
-                        {form.formState.errors.root.message}
-                      </p>
-                    )}
+                  <Body>
+                    <FormField
+                      control={form.control}
+                      name="pictures"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Galery getFiles={getFiles} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </Body>
                 </Main>
+
+                <Button
+                  className="flex lg:hidden"
+                  disabled={isLoading ? true : false}
+                >
+                  Criar novo anúncio{" "}
+                  {isLoading ? (
+                    <LoaderIcon className="animate-spin" />
+                  ) : (
+                    <Plus />
+                  )}
+                </Button>
               </div>
             </form>
           </Form>
@@ -2084,14 +3775,48 @@ function page() {
 
 export default page;
 
+function Success() {
+  return (
+    <div className="mx-auto p-6 text-center h-screen flex items-center justify-center flex-col">
+      {/* Ícone de sucesso */}
+      <div className="mb-6">
+        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+      </div>
+
+      {/* Título */}
+      <h1 className="text-2xl font-bold mb-2">Anúncio Criado com Sucesso</h1>
+
+      {/* Mensagem */}
+      <p className="text-gray-600 mb-6">
+        Seu anúncio foi publicado e já pode ser visualizado pelos interessados.{" "}
+        <strong>Boa sorte na sua negociação!</strong>
+      </p>
+
+      {/* Botões de ação */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button asChild variant="outline">
+          <Link href="/user/dashboard">Ver Meus Anúncios</Link>
+        </Button>
+        <Button asChild>
+          <Link href="/anuncio/novo">Criar Outro Anúncio</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function Main({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot=""
-      className={cn("w-full p-2 rounded-md ", className)}
+      className={cn("w-full p-2 rounded-md  ", className)}
       {...props}
     />
   );
+}
+
+function LoaderCustom({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="" className={cn("", className)} {...props} />;
 }
 
 function Header({ className, ...props }: React.ComponentProps<"div">) {
@@ -2119,7 +3844,7 @@ function Body({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot=""
-      className={cn("my-2 p-4 border rounded-md shadow-xs  ", className)}
+      className={cn("my-2 p-4 border rounded-md shadow-xs   ", className)}
       {...props}
     />
   );
