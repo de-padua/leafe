@@ -42,13 +42,8 @@ const navigationLinks = [
 
 export default function CustomNavBar() {
   const userData = useUserStore((state) => state.currentUser);
-  const isLoading = useUserStore((state) => state.isLoading);
 
-  useEffect(() => {
-    console.log(userData);
-  }, [userData]);
 
-  if (isLoading) return <div>loading</div>;
 
   if (userData === null)
     return (

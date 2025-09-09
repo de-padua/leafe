@@ -104,7 +104,7 @@ const formSchema = z
     description: z
       .string()
       .min(10, { message: "A descrição precisa ter no mínimo 10 caracteres" })
-      .max(700, { message: "A descrição pode ter no máximo 700 caracteres" }),
+      .max(2000, { message: "A descrição pode ter no máximo 700 caracteres" }),
     log: z.string().min(5, {
       message: "O logradouro precisa ter no mínimo 5 caracteres",
     }),
@@ -160,18 +160,10 @@ const formSchema = z
     type: z.enum(["HOUSE", "AP", "LAND"], {
       required_error: "Você precisa selecionar o tipo de imóvel.",
     }),
-    area: z.coerce
-      .number({
-        invalid_type_error: "A área do imóvel deve ser um número válido.",
-      })
-      .min(1, { message: "Informe a área total do imóvel em m²." })
-      .transform((v) => Number(v) || 0),
+    area: z.coerce.number().transform((v) => Number(v) || 0),
 
-    built: z.coerce
-      .number({
-        invalid_type_error: "A área construída deve ser um número válido.",
-      })
-      .min(0, { message: "A área construída não pode ser negativa." }),
+    built: z.coerce.number(),
+
     financeBanks: z.array(z.string()),
     pool_size: z.coerce.number().optional(),
     gatedCommunity_price: z.coerce.number(),
@@ -277,7 +269,7 @@ const formSchema = z
       .min(1, { message: "Envie pelo menos uma foto." }),
   })
   .superRefine((data, ctx) => {
-    if (data.type === "HOUSE" && !data.area && data.area === undefined) {
+    if (data.type === "HOUSE" && !data.area && !data.built) {
       ctx.addIssue({
         path: ["area"],
         code: z.ZodIssueCode.custom,
@@ -437,7 +429,8 @@ function page() {
   const [cepLoad, setCepLoad] = useState<boolean>(false);
   const [geo, setGeo] = useState<null | { lng: string; lat: string }>(null);
   const [adFiles, setFiles] = useState<FileWithPreview[]>([]);
-
+  const [adress, setAdress] = useState<string | null>(null);
+  const [mapUrl, setMapUrl] = useState("");
   const getUserAdress = async (cep: string) => {
     setCepLoad(true);
     getCoordsByCEP(cep);
@@ -448,6 +441,13 @@ function page() {
 
       const data = await adress.json();
 
+      const endereco = `${data.logradouro}, ${data.localidade}, ${data.uf}, Brasil`;
+
+      const url = `https://maps.google.com/maps?q=${encodeURIComponent(
+        endereco
+      )}&t=&z=14&ie=UTF8&iwloc=B&output=embed`;
+
+      setMapUrl(url);
       setCepLoad(false);
 
       if (data.erro === "true") {
@@ -476,6 +476,8 @@ function page() {
   const isPoolMarked = form.watch("pool");
   const isGatedComunity = form.watch("gatedCommunity");
   const isFinan = form.watch("isFinan");
+  const type = form.watch("type");
+
   const cepRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (ref: React.RefObject<HTMLInputElement | null>) => {
@@ -613,6 +615,7 @@ function page() {
     }).format(numberValue);
   };
   const [accordionValue, setAccordionValue] = React.useState("");
+
   useEffect(() => {
     if (cepFormWatcher.length === 8) {
       getUserAdress(cepFormWatcher);
@@ -621,13 +624,20 @@ function page() {
     if (cepRef !== null) handleInputChange(cepRef);
     if (!isPoolMarked) form.setValue("pool_size", 0);
     if (!isGatedComunity) form.setValue("gatedCommunity_price", 0);
-    if (!isFinan){ 
-      form.setValue("financeBanks", [])  
-      setAccordionValue("") }
+    if (!isFinan) {
+      form.setValue("financeBanks", []);
+      setAccordionValue("");
+    }
     if (isFinan) {
       setAccordionValue("financeBanks");
     }
-  }, [cepFormWatcher, isGatedComunity, isPoolMarked, isFinan]);
+      if ( form.getFieldState("area").invalid ||  form.getFieldState("built").invalid || form.getFieldState("pool_size").invalid ) {
+        form.clearErrors("area");
+        form.clearErrors("pool_size");
+        form.clearErrors("built");
+
+    }
+  }, [cepFormWatcher, isGatedComunity, isPoolMarked, isFinan,type]);
 
   const types = [
     {
@@ -636,34 +646,6 @@ function page() {
       sublabel: "Unidade autônoma em condomínio",
       description:
         "Ideal para quem busca praticidade e segurança. Apartamentos geralmente oferecem amenities como piscina, academia e área de lazer.",
-      svg: (
-        <svg
-          className="shrink-0"
-          width={32}
-          height={24}
-          viewBox="0 0 32 24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <rect width="32" height="24" rx="4" fill="#252525" />
-          {/* Edifício */}
-          <rect x="8" y="6" width="16" height="14" fill="#FF5A00" rx="1" />
-          {/* Janelas - Andar superior */}
-          <rect x="11" y="8" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          <rect x="15" y="8" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          <rect x="19" y="8" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          {/* Janelas - Andar médio */}
-          <rect x="11" y="12" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          <rect x="15" y="12" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          <rect x="19" y="12" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          {/* Janelas - Andar inferior */}
-          <rect x="11" y="16" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          <rect x="15" y="16" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          <rect x="19" y="16" width="2" height="2" fill="#F79E1B" rx="0.5" />
-          {/* Porta de entrada */}
-          <rect x="13.5" y="17" width="5" height="3" fill="#EB001B" rx="0.5" />
-        </svg>
-      ),
     },
     {
       value: "HOUSE",
@@ -671,38 +653,6 @@ function page() {
       sublabel: "Imóvel residencial independente",
       description:
         "Perfeita para famílias que valorizam privacidade e espaço. Casas oferecem maior área útil, quintal e mais liberdade para personalização.",
-      svg: (
-        <svg
-          className="shrink-0"
-          width={32}
-          height={24}
-          viewBox="0 0 32 24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <rect width="32" height="24" rx="4" fill="#252525" />
-          {/* Casa */}
-          <path
-            d="M16 6L8 12V20H12V16H20V20H24V12L16 6Z"
-            fill="#FF5A00"
-            stroke="#EB001B"
-            strokeWidth="0.5"
-          />
-          {/* Porta */}
-          <rect x="14" y="14" width="4" height="6" fill="#EB001B" />
-          {/* Janela esquerda */}
-          <rect x="10" y="14" width="2" height="2" fill="#F79E1B" />
-          {/* Janela direita */}
-          <rect x="20" y="14" width="2" height="2" fill="#F79E1B" />
-          {/* Detalhe do telhado */}
-          <path
-            d="M8 12L16 6L24 12"
-            stroke="#F79E1B"
-            strokeWidth="0.8"
-            fill="none"
-          />
-        </svg>
-      ),
     },
     {
       value: "LAND",
@@ -710,50 +660,6 @@ function page() {
       sublabel: "Área livre para construção",
       description:
         "Opportunidade para construir seu imóvel do zero. Terrenos permitem total customização e são ideais para investidores e quem quer criar um projeto personalizado.",
-      svg: (
-        <svg
-          className="shrink-0"
-          width={32}
-          height={24}
-          viewBox="0 0 32 24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-        >
-          <rect width="32" height="24" rx="4" fill="#252525" />
-          {/* Terreno com formato orgânico */}
-          <path
-            d="M9 14Q8 12 10 10Q12 8 16 8Q20 8 22 10Q24 12 23 14Q22 16 20 17Q18 18 16 18Q14 18 12 17Q10 16 9 14Z"
-            fill="#FF5A00"
-          />
-
-          {/* Cerca/marcação do terreno */}
-          <path
-            d="M10 11Q12 9 16 9Q20 9 22 11"
-            stroke="#EB001B"
-            strokeWidth="0.8"
-            fill="none"
-          />
-          <path
-            d="M9 14Q11 16 16 16Q21 16 23 14"
-            stroke="#EB001B"
-            strokeWidth="0.8"
-            fill="none"
-          />
-
-          {/* Elementos naturais */}
-          {/* Árvore 1 */}
-          <rect x="12" y="12" width="1" height="3" fill="#EB001B" />
-          <circle cx="12.5" cy="10" r="2" fill="#F79E1B" />
-
-          {/* Árvore 2 */}
-          <rect x="19" y="11" width="1" height="2" fill="#EB001B" />
-          <circle cx="19.5" cy="9" r="1.5" fill="#F79E1B" />
-
-          {/* Pedras/marcadores */}
-          <circle cx="14" cy="14" r="0.8" fill="#EB001B" />
-          <circle cx="18" cy="13" r="0.6" fill="#EB001B" />
-        </svg>
-      ),
     },
   ];
   const rooms = [
@@ -784,16 +690,16 @@ function page() {
     { value: "5", label: "5" },
   ];
   const financeBanks = [
-    { value: "itau", label: "Itaú Unibanco", Icon: "", defaultChecked: true },
-    { value: "bb", label: "Banco do Brasil", Icon: "" },
-    { value: "bradesco", label: "Bradesco", Icon: "" },
-    { value: "caixa", label: "Caixa Econômica", Icon: "" },
-    { value: "santander", label: "Santander Brasil", Icon: "" },
-    { value: "btg", label: "BTG Pactual", Icon: "" },
-    { value: "sicredi", label: "Sicredi", Icon: "" },
-    { value: "sicoob", label: "Sicoob", Icon: "" },
-    { value: "safra", label: "Banco Safra", Icon: "" },
-    { value: "citibank", label: "Citibank Brasil", Icon: "" },
+    { value: "Itaú Unibanco", label: "Itaú Unibanco", Icon: "", defaultChecked: true },
+    { value: "Banco do Brasil", label: "Banco do Brasil", Icon: "" },
+    { value: "BradescO", label: "Bradesco", Icon: "" },
+    { value: "Caixa Econômica", label: "Caixa Econômica", Icon: "" },
+    { value: "Santander Brasil", label: "Santander Brasil", Icon: "" },
+    { value: "BTG Pactual", label: "BTG Pactual", Icon: "" },
+    { value: "Sicredi", label: "Sicredi", Icon: "" },
+    { value: "Sicoob", label: "Sicoob", Icon: "" },
+    { value: "Banco Safra", label: "Banco Safra", Icon: "" },
+    { value: "Citibank Brasil", label: "Citibank Brasil", Icon: "" },
   ] as const;
   const andares = [
     { value: "0", label: "Térreo" },
@@ -2678,7 +2584,7 @@ function page() {
                     </Description>
                   </Header>
                   <Body>
-                    <Body className="   grid gap-3 md:grid-cols-2 lg:grid-cols-3  border-none">
+                    <Body className="  border  grid gap-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 ">
                       <FormField
                         control={form.control}
                         name="price"
@@ -2725,7 +2631,7 @@ function page() {
                                   placeholder="R$ 0,00"
                                 />
 
-                                <span className="border-input bg-background text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
+                                <span className="border-input  text-muted-foreground -z-10 inline-flex items-center rounded-e-md border px-3 text-sm">
                                   Real
                                 </span>
                               </div>
@@ -2828,7 +2734,7 @@ function page() {
                         )}
                       />
                     </Body>
-                    <Body className="border-none">
+                    <Body className="border-none bg-neutral-50">
                       <FormField
                         control={form.control}
                         name="isFinan"
@@ -2875,21 +2781,19 @@ function page() {
                                         control={form.control}
                                         name="financeBanks"
                                         render={() => (
-                                          <FormItem  >
+                                          <FormItem>
                                             <Accordion
                                               type="single"
                                               collapsible={true}
-                                              
                                               defaultValue="3"
                                               value={accordionValue}
                                               onValueChange={setAccordionValue}
-
                                             >
                                               <AccordionItem
                                                 value="financeBanks"
                                                 className="py-2"
                                               >
-                                                <AccordionContent className="grid grid-cols-2 md:grid-cols-3 gap-2"> 
+                                                <AccordionContent className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                                   {financeBanks.map((item) => (
                                                     <FormField
                                                       key={item.value}
@@ -2994,18 +2898,18 @@ function page() {
                     </Description>
                   </Header>
                   <Body>
+                    <Header>
+                      <Title>Tipo do imóvel</Title>
+                      <Description>
+                        Escolha a categoria que representa o imóvel, como casa,
+                        apartamento ou terreno.
+                      </Description>
+                    </Header>
                     <FormField
                       control={form.control}
                       name="type"
                       render={({ field }) => (
                         <FormItem className="space-0 gap-0">
-                          <FormLabel className="text-sm">
-                            Tipo de imóvel
-                            <span className="text-sm text-red-700 mx-2">*</span>
-                          </FormLabel>
-                          <FormDescription className="text-xs">
-                            Selecione o tipo de imóvel
-                          </FormDescription>
                           <FormControl>
                             <RadioGroup
                               onValueChange={field.onChange}
@@ -3044,6 +2948,13 @@ function page() {
                       <>
                         {" "}
                         <Body>
+                          <Header className="mb-4">
+                            <Title>Dimenções da propiedade</Title>
+                            <Description>
+                              Descreva as dimenções da propiedade com o máximo
+                              de precisão possível.
+                            </Description>
+                          </Header>
                           <div className="grid md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
                             {["HOUSE", "AP"].includes(form.watch().type) && (
                               <div>
@@ -3261,127 +3172,35 @@ function page() {
                             )}
                           </div>
                         </Body>
-                        <Body className=" grid   grid-cols-2 2xl:grid-cols-4 gap-3 ">
-                          <FormField
-                            control={form.control}
-                            name="rooms"
-                            render={({ field }) => (
-                              <FormItem className="">
-                                <FormLabel>
-                                  Quartos{" "}
-                                  <span className="text-sm text-red-700">
-                                    *
-                                  </span>
-                                </FormLabel>
-                                <FormControl>
-                                  <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="grid gap-2 px-5"
-                                  >
-                                    {rooms.map((item) => (
-                                      <RadioGroup_1.Item
-                                        key={item.value}
-                                        value={item.value}
-                                        className={cn(
-                                          " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
-                                          "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
-                                        )}
-                                      >
-                                        <p className="">{item.label}</p>
-                                      </RadioGroup_1.Item>
-                                    ))}
-                                  </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="bathrooms"
-                            render={({ field }) => (
-                              <FormItem className="">
-                                <FormLabel>
-                                  Banheiros{" "}
-                                  <span className="text-sm text-red-700">
-                                    *
-                                  </span>
-                                </FormLabel>
-                                <FormControl>
-                                  <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="grid gap-2 px-5"
-                                  >
-                                    {banheiros.map((item) => (
-                                      <RadioGroup_1.Item
-                                        key={item.value}
-                                        value={item.value}
-                                        className={cn(
-                                          " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
-                                          "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
-                                        )}
-                                      >
-                                        <p className="">{item.label}</p>
-                                      </RadioGroup_1.Item>
-                                    ))}
-                                  </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="bathrooms"
-                            render={({ field }) => (
-                              <FormItem className="">
-                                <FormLabel>
-                                  Vagas de garagem{" "}
-                                  <span className="text-sm text-red-700">
-                                    *
-                                  </span>
-                                </FormLabel>
-                                <FormControl>
-                                  <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="grid gap-2 px-5"
-                                  >
-                                    {garagem.map((item) => (
-                                      <RadioGroup_1.Item
-                                        key={item.value}
-                                        value={item.value}
-                                        className={cn(
-                                          " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
-                                          "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
-                                        )}
-                                      >
-                                        <p className="">{item.label}</p>
-                                      </RadioGroup_1.Item>
-                                    ))}
-                                  </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          {["HOUSE"].includes(form.watch().type) && (
+                        <Body>
+                          <Header className="mb-3">
+                            <Title>Detalhes internos do imóvel </Title>
+                            <Description>
+                              Especifique a quantidade de quartos, salas,
+                              andares e vagas de garagem para ajudar os
+                              interessados a conhecer melhor a estrutura da
+                              propriedade.{" "}
+                            </Description>
+                          </Header>{" "}
+                          <Body className=" grid   grid-cols-2 2xl:grid-cols-4 gap-3 border-none ">
                             <FormField
                               control={form.control}
-                              name="floors"
+                              name="rooms"
                               render={({ field }) => (
-                                <FormItem className="h-fit">
-                                  <FormLabel>Quantidade de pisos</FormLabel>
+                                <FormItem className="">
+                                  <FormLabel>
+                                    Quartos{" "}
+                                    <span className="text-sm text-red-700">
+                                      *
+                                    </span>
+                                  </FormLabel>
                                   <FormControl>
                                     <RadioGroup
                                       onValueChange={field.onChange}
                                       defaultValue={field.value}
                                       className="grid gap-2 px-5"
                                     >
-                                      {andares.map((item) => (
+                                      {rooms.map((item) => (
                                         <RadioGroup_1.Item
                                           key={item.value}
                                           value={item.value}
@@ -3399,7 +3218,110 @@ function page() {
                                 </FormItem>
                               )}
                             />
-                          )}
+
+                            <FormField
+                              control={form.control}
+                              name="bathrooms"
+                              render={({ field }) => (
+                                <FormItem className="">
+                                  <FormLabel>
+                                    Banheiros{" "}
+                                    <span className="text-sm text-red-700">
+                                      *
+                                    </span>
+                                  </FormLabel>
+                                  <FormControl>
+                                    <RadioGroup
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value}
+                                      className="grid gap-2 px-5"
+                                    >
+                                      {banheiros.map((item) => (
+                                        <RadioGroup_1.Item
+                                          key={item.value}
+                                          value={item.value}
+                                          className={cn(
+                                            " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                            "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                          )}
+                                        >
+                                          <p className="">{item.label}</p>
+                                        </RadioGroup_1.Item>
+                                      ))}
+                                    </RadioGroup>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="bathrooms"
+                              render={({ field }) => (
+                                <FormItem className="">
+                                  <FormLabel>
+                                    Vagas de garagem{" "}
+                                    <span className="text-sm text-red-700">
+                                      *
+                                    </span>
+                                  </FormLabel>
+                                  <FormControl>
+                                    <RadioGroup
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value}
+                                      className="grid gap-2 px-5"
+                                    >
+                                      {garagem.map((item) => (
+                                        <RadioGroup_1.Item
+                                          key={item.value}
+                                          value={item.value}
+                                          className={cn(
+                                            " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                            "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                          )}
+                                        >
+                                          <p className="">{item.label}</p>
+                                        </RadioGroup_1.Item>
+                                      ))}
+                                    </RadioGroup>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            {["HOUSE"].includes(form.watch().type) && (
+                              <FormField
+                                control={form.control}
+                                name="floors"
+                                render={({ field }) => (
+                                  <FormItem className="h-fit">
+                                    <FormLabel>Quantidade de pisos</FormLabel>
+                                    <FormControl>
+                                      <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="grid gap-2 px-5"
+                                      >
+                                        {andares.map((item) => (
+                                          <RadioGroup_1.Item
+                                            key={item.value}
+                                            value={item.value}
+                                            className={cn(
+                                              " w-full text-center p-5 py-2 relative group ring-[1px] ring-border rounded-sm text-sm ",
+                                              "data-[state=checked]:ring-1 data-[state=checked]:ring-neutral-500"
+                                            )}
+                                          >
+                                            <p className="">{item.label}</p>
+                                          </RadioGroup_1.Item>
+                                        ))}
+                                      </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            )}
+                          </Body>
                         </Body>
                         <Tabs defaultValue="tab-1">
                           <ScrollArea>
@@ -3451,9 +3373,7 @@ function page() {
 
                           <TabsContent value="tab-1">
                             <Body>
-                              <Header>
-                                <Title>Geral</Title>
-                              </Header>
+                              <Header></Header>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {amenities
                                   .filter((item) => item.category === undefined)
@@ -3467,9 +3387,7 @@ function page() {
                           </TabsContent>
                           <TabsContent value="tab-2">
                             <Body>
-                              <Header>
-                                <Title>Segurança</Title>
-                              </Header>
+                              <Header></Header>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {amenities
                                   .filter(
@@ -3485,9 +3403,7 @@ function page() {
                           </TabsContent>
                           <TabsContent value="tab-3">
                             <Body>
-                              <Header>
-                                <Title>Tecnologia</Title>
-                              </Header>
+                              <Header></Header>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {amenities
                                   .filter(
@@ -3504,9 +3420,7 @@ function page() {
                           </TabsContent>
                           <TabsContent value="tab-4">
                             <Body>
-                              <Header>
-                                <Title>Verde social</Title>
-                              </Header>
+                              <Header></Header>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {amenities
                                   .filter(
@@ -3522,9 +3436,7 @@ function page() {
                           </TabsContent>
                           <TabsContent value="tab-5">
                             <Body>
-                              <Header>
-                                <Title>Lazer</Title>
-                              </Header>
+                              <Header></Header>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {amenities
                                   .filter((item) => item.category === "lazer")
@@ -3538,9 +3450,7 @@ function page() {
                           </TabsContent>
                           <TabsContent value="tab-6">
                             <Body>
-                              <Header>
-                                <Title>Estrutura</Title>
-                              </Header>
+                              <Header></Header>
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                                 {amenities
                                   .filter(
@@ -3687,47 +3597,16 @@ function page() {
                 </Main>
 
                 <div>
-                  {geo && (
-                    <MapContainer
-                      center={[parseFloat(geo.lat), parseFloat(geo.lng)]}
-                      zoom={14}
-                      style={{
-                        filter: "contrast(99%) brightness(95%)",
-                        width: "100%",
-                        height: "300px",
-                        borderRadius: "1rem",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-                        subdomains={["a", "b", "c", "d"]}
+                  {mapUrl && (
+                    <div className="relative w-full">
+                      <iframe
+                        src={mapUrl}
+                        width="100%"
+                        height="400"
+                        className="border-0 rounded-md"
+                        loading="lazy"
                       />
-                      <Circle
-                        center={[parseFloat(geo.lat), parseFloat(geo.lng)]}
-                        radius={500}
-                      />
-                    </MapContainer>
-                  )}
-                  {geo ? null : (
-                    <MapContainer
-                      center={[-23.55052, -46.633308]}
-                      zoom={14}
-                      style={{
-                        filter: "contrast(99%) brightness(95%)",
-                        width: "100%",
-                        height: "300px",
-                        borderRadius: "1rem",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <TileLayer
-                        url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>'
-                        subdomains={["a", "b", "c", "d"]}
-                      />
-                    </MapContainer>
+                    </div>
                   )}
                 </div>
                 <Main>

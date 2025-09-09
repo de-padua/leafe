@@ -27,15 +27,16 @@ export class AuthService {
 
   createAccessTokenJwt = async (userData: Partial<user>) => {
     const payload = {
-      data: userData,
+      data: {...userData,cptspbs:process.env.public_supabase},
       sub: userData.id,
       role: 'authenticated',
       exp: Math.floor(Date.now() / 1000) + 60 * 0.1,
       iat: Math.floor(Date.now() / 1000),
     };
 
-    const accessToken = this.jwtService.sign(payload, {
+    const accessToken = this.jwtService.sign({...payload}, {
       secret: process.env.JWT_SECRET,
+      
     });
     return accessToken;
   };

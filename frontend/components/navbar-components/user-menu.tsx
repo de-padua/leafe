@@ -4,6 +4,7 @@ import {
   BookOpenIcon,
   Layers2Icon,
   LogOutIcon,
+  PanelsTopLeft,
   PinIcon,
   Plus,
   PlusCircle,
@@ -27,6 +28,7 @@ import { User } from "@/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExitIcon } from "@radix-ui/react-icons";
 import { useUserStore } from "@/lib/stores/currentUserStore";
+import { data } from "../custom/estate-filter";
 
 export default function UserMenu(props: { userdata: User }) {
   const queryClient = useQueryClient();
@@ -103,7 +105,12 @@ export default function UserMenu(props: { userdata: User }) {
             </DropdownMenuItem>{" "}
           </a>
           <DropdownMenuSeparator />
-
+<a href={`/user/dashboard/${props.userdata.id}`}>
+            <DropdownMenuItem>
+              <PanelsTopLeft size={16} className="opacity-60" aria-hidden="true" />
+              <span> Dashboard</span>
+            </DropdownMenuItem>{" "}
+          </a>
           <DropdownMenuItem>
             <PlusCircle size={16} className="opacity-60" aria-hidden="true" />
             <span> Novo anúncio</span>

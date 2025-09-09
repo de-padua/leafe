@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -16,6 +17,7 @@ import { CreateUserDto } from './dto/createUserDTO';
 import { Request, Response } from 'express';
 import { AuthGuard, CustomRequestWithId } from 'src/auth/auth.guard';
 import { updateUserPasswordDto } from './dto/update-password-dto';
+import GetPublicUserDataQuery from './dto/queryDto';
 
 @Controller('users')
 export class UsersController {
@@ -95,5 +97,14 @@ export class UsersController {
     const codes = await this.UserService.getUserCodes(userId);
 
     return codes;
+  }
+
+  @Get('public') 
+  async getPublicUserData(@Query() query: GetPublicUserDataQuery) {
+    const { userId , sort, offset, limit } = query
+ 
+    const publicUserData = await this.UserService.getProfileUserData(userId,offset,sort,null,limit)
+    
+    return publicUserData
   }
 }

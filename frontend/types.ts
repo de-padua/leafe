@@ -72,38 +72,158 @@ export type UserWithoutProperties = {
   session?: Session | null;
   createdAt: Date;
   imoveisTotalLenght: number;
-};
+}
+
+export enum PropertyType  {
+  AP,
+  HOUSE,
+  LAND,
+}
 export type Session = {
   id: string;
   userId: string;
   user?: User;
 };
-
 export type Imovel = {
   id: string;
   title: string;
-  postedAt: Date | string;
-  lastUpdate: Date | string;
-  textDescription: string;
+  postedAt: Date;
+  lastUpdate: Date;
+  description: string;
+  postId: string;
+
+  type: PropertyType;
+
+  log: string;
+  street: string;
   estate: string;
   city: string;
   CEP: string;
+
   price: number;
-  IPTU: string;
+
   rooms: number;
   bathrooms: number;
   garage: number;
-  hasParking: boolean;
   bedrooms: number;
+  floors: number;
+  age: number;
+  stage: number;
+  pool_size: number;
+  gatedCommunity_price: number;
+
+  furnished: boolean;
+  pool: boolean;
+  gym: boolean;
+  security: boolean;
+  elevator: boolean;
+  accessible: boolean;
+  balcony: boolean;
+  garden: boolean;
+  barbecueArea: boolean;
+  solarEnergy: boolean;
+  library: boolean;
+  wineCellar: boolean;
+  airConditioning: boolean;
+  smartHome: boolean;
+  laundryRoom: boolean;
+  gatedCommunity: boolean;
+  alarmSystem: boolean;
+  surveillanceCameras: boolean;
+  fingerprintAccess: boolean;
+  solarPanels: boolean;
+  chargingStation: boolean;
+  partyRoom: boolean;
+  guestParking: boolean;
+  petArea: boolean;
+  bikeRack: boolean;
+  coWorkingSpace: boolean;
+  petFriendly: boolean;
+
+  concierge: boolean;
+  backupGenerator: boolean;
+  waterReservoir: boolean;
+  serviceElevator: boolean;
+  coveredParking: boolean;
+  visitorParking: boolean;
+  carWash: boolean;
+
+  sportsCourt: boolean;
+  tennisCourt: boolean;
+  squashCourt: boolean;
+  soccerField: boolean;
+  skatePark: boolean;
+  runningTrack: boolean;
+  playground: boolean;
+  kidsRoom: boolean;
+  gameRoom: boolean;
+  cinemaRoom: boolean;
+  musicStudio: boolean;
+  spa: boolean;
+  sauna: boolean;
+  jacuzzi: boolean;
+  heatedPool: boolean;
+  indoorPool: boolean;
+  kidsPool: boolean;
+
+  communityGarden: boolean;
+  orchard: boolean;
+  meditationSpace: boolean;
+  hammockArea: boolean;
+  gourmetBarbecue: boolean;
+  pizzaOven: boolean;
+  firePit: boolean;
+  outdoorLounge: boolean;
+  panoramicDeck: boolean;
+  rooftop: boolean;
+
+  centralHeating: boolean;
+  centralCooling: boolean;
+  centralVacuum: boolean;
+  homeAutomation: boolean;
+  fiberInternet: boolean;
+  cableTvReady: boolean;
+  soundSystem: boolean;
+  smartLighting: boolean;
+  soundProofing: boolean;
+
+  securityRoom: boolean;
+  qrAccess: boolean;
+  facialRecognition: boolean;
+  panicButton: boolean;
+  automaticGate: boolean;
+
+  housekeeping: boolean;
+  laundryService: boolean;
+  coffeeShop: boolean;
+  miniMarket: boolean;
+  privateOffices: boolean;
+  deliveryRoom: boolean;
+  petCare: boolean;
+  carSharing: boolean;
+  bikeSharing: boolean;
+  driverLounge: boolean;
+
   area: number;
+  built: number;
+
+  isFinan: boolean;
+  financeBanks: string[];
+
+  views: number;
+  isActive: boolean;
+  isFeatured: boolean;
+
   userId: string;
-  user?: User;
+  user: UserWithoutProperties; // assumindo que já existe um tipo User
+  imovelImages: ImovelImages[];
 };
 
-export type CreateImovel = Omit<
-  Imovel,
-  "id" | "postedAt" | "lastUpdate" | "user"
->;
+export type ImovelImages = {
+  id: string;
+  imageUrl: string;
+  imovelId: string;
+  imovel: Imovel;
+};
 
-export type UpdateImovel = Partial<CreateImovel> & { id: string };
 

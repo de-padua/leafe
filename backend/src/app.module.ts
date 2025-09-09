@@ -13,6 +13,8 @@ import { EmailController } from './email/email.controller';
 import { EmailService } from './email/email.service';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
+import { AnuncioController } from './anuncio/anuncio.controller';
+import { AnuncioService } from './anuncio/anuncio.service';
 
 const isProd = false;
 @Module({
@@ -45,8 +47,8 @@ const isProd = false;
       secret: process.env.JWT_SECRET, 
     }),
   ],
-  controllers: [UsersController, AuthController, EmailController],
-  providers: [PrismaService, UsersService, AuthService, EmailService],
+  controllers: [UsersController, AuthController, EmailController, AnuncioController],
+  providers: [PrismaService, UsersService, AuthService, EmailService, AnuncioService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {}
