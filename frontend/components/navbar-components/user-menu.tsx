@@ -105,7 +105,7 @@ export default function UserMenu(props: { userdata: User }) {
             </DropdownMenuItem>{" "}
           </a>
           <DropdownMenuSeparator />
-<a href={`/user/dashboard/${props.userdata.id}`}>
+<a href={`/user/dashboard/page/1`}>
             <DropdownMenuItem>
               <PanelsTopLeft size={16} className="opacity-60" aria-hidden="true" />
               <span> Dashboard</span>

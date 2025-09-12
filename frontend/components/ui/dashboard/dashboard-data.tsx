@@ -1,34 +1,26 @@
 "use client";
 dotenv.config();
 import * as dotenv from "dotenv";
-
-import ProfileCard from "@/components/custom/profile-card";
-import { Imovel, PropertyType, UserWithoutProperties } from "@/types";
+import { Imovel } from "@/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { useParams } from "next/navigation";
-import React, { useState } from "react";
-import UserPosts from "@/components/custom/filtro-pesquisa";
+import React, { use, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import ProfileCardSkeleton from "@/components/custom/profile-card-skeleton";
-import { Skeleton } from "@/components/ui/skeleton";
 import NotFoundCustom from "@/components/custom/NotFound";
-import { useSearchParams } from "next/navigation";
-import { useUserStore } from "@/lib/stores/currentUserStore";
 import Image from "next/image";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   Table,
   TableBody,
@@ -39,105 +31,175 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { Cross1Icon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   AlertCircle,
-  Bath,
+  Archive,
+  ArrowRightIcon,
+  AwardIcon,
+  Calendar,
   CheckIcon,
-  Eraser,
+  ChevronLeftSquare,
+  ChevronsUpDownIcon,
+  Cross,
+  CrossIcon,
+  Edit2,
+  Eye,
   EyeClosed,
+  EyeIcon,
+  List,
+  Package,
+  PackageOpen,
   Pen,
+  Rows3,
+  Search,
+  SearchIcon,
+  Table2Icon,
+  ToggleLeft,
+  Trash,
+  Undo2,
+  X,
 } from "lucide-react";
 import { Badge } from "../badge";
 import { Button } from "../button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Input } from "../input";
+import { Skeleton } from "../skeleton";
+import { Label } from "react-aria-components";
+import { array, object } from "zod";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
-import { TrendingUp } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { DialogClose } from "@radix-ui/react-dialog";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
-import { ScrollArea, ScrollBar } from "../scroll-area";
-import { Breadcrumb } from "../breadcrumb";
-import { object } from "zod";
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { data } from "@/components/custom/estate-filter";
+import { useParams, useRouter } from "next/navigation";
 export const description = "An area chart with gradient fill";
 
+export type ImovelPreview = {
+  id: string;
+  title: string;
+  price: number;
+  street: string;
+  log: string;
+  city: string;
+  type: string;
+  estate: string;
+  isActive: boolean;
+  CEP: string;
+  userId: string;
+};
+
 function Dashboard() {
-  const filter = "desc";
-  const price = "";
+  const router = useRouter();
+  const params = useParams<{ page: string; status: string }>();
 
-  const offset = 0;
+  const skeletonArray = Array.from({ length: 10 });
 
-  const params = useParams<{ id: string }>();
+  const [currentPost, setCurrentPost] = useState<{
+    paginationData: {};
+    data: ImovelPreview;
+  } | null>(null);
 
-  const [currentPost, setCurrentPost] = useState<Imovel | null>(null);
+  const [openFilter, setOpenFilter] = React.useState(false);
+  const [openTypeFilter, setOpenTypeFilter] = React.useState(false);
+  const [openIsActiveFilter, setIsActiveFilter] = React.useState(false);
 
-  const getPublicUserData = async (): Promise<Imovel[]> => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/users/public/?userId=${params.id}&sort=${filter}&price=${price}&offset=${offset}`,
-        {
-          method: "GET",
+  const filterOptionsList = [
+    { label: "Mais relevantes", value: "" },
+    { label: "Mais recentes", value: "createdAt" },
+    { label: "Maior preço", value: "priceDesc" },
+    { label: "Menor preço", value: "priceAsc" },
+  ];
+
+  const typeFilterOptionList = [
+    { label: "Todos", value: "" },
+    { label: "Apartamento", value: "AP" },
+    { label: "Casa", value: "HOUSE" },
+    { label: "Terreno", value: "LAND" },
+  ];
+
+  const [searchData, setSerchData] = useState<string | null>(null);
+  const [filterOption, setFilterOption] = useState(filterOptionsList[0].value);
+  const [typeOption, setTypeOption] = useState(typeFilterOptionList[0].value);
+
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [tempSearch, setTempSearch] = useState<string | null>(null);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const determineStatusPage =
+    params.status === "all"
+      ? null
+      : params.status === "active"
+      ? true
+      : params.status === "archive"
+      ? false
+      : null;
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: [searchData, typeOption, filterOption],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/dashboard/ `, {
+          method: "POST",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-        }
-      );
+          body: JSON.stringify({
+            type: typeOption === "" ? null : typeOption,
+            filterBy: filterOption === "" ? null : filterOption,
+            search: searchData ? searchData : null,
+            pageOffset: (parseInt(params.page) - 1) * 10,
+            isActive: determineStatusPage,
+          }),
+        });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw error;
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw error;
+          }
+          const errorData = await response.json().catch(() => null);
+
+          throw new Error(
+            errorData?.message || `HTTP error! status: ${response.status}`
+          );
         }
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || `HTTP error! status: ${response.status}`
-        );
+
+        const data: {
+          pagination: {
+            pages: number;
+            totalCount: number;
+          };
+          data: ImovelPreview[];
+        } = await response.json();
+
+        console.log(data);
+
+        return data;
+      } catch (err) {
+        throw err;
       }
-
-      const data = await response.json();
-
-      return data;
-    } catch (err) {
-      throw err;
-    }
-  };
-
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["publicUserData"],
-    queryFn: async () => {
-      return getPublicUserData();
     },
   });
 
@@ -147,129 +209,492 @@ function Dashboard() {
     minimumFractionDigits: 2,
   });
 
-  const handleSetCurrentPost = (post: Imovel | null) => {
-    if (!post) setCurrentPost(null);
 
-    setCurrentPost(post);
-  };
-
-  if (isLoading) return <div></div>;
-  if (isError) return <div>Error: {error.message}</div>;
-  if (!data)
+  if (isLoading) {
     return (
-      <div>
-        <NotFoundCustom />
+      <div className="flex items-start justify-center min-h-screen">
+        <div className="w-2/3 my-5  rounded-md">
+          <SearchPageSkeleton />{" "}
+        </div>
       </div>
     );
+  }
+  if (!data) {
+    return (
+      <div className="flex items-start justify-center min-h-screen">
+        <div className="w-2/3 my-5  rounded-md">
+          <SearchPageSkeleton />{" "}
+        </div>
+      </div>
+    );
+  }
+
+  const page = parseInt(params.page);
+  const perPage = 10;
+
+  const start = (page - 1) * perPage + 1;
+  const end = Math.min(page * perPage, data.pagination.totalCount);
+
+  const handleClick = (status: string) => {
+    router.push(`/user/dashboard/page/1/status/${status}`);
+  };
 
   return (
-    <div className="">
-      <div className="flex items-center justify-center w-full ">
-        {currentPost && (
-          <Drawer
-            open={!!currentPost}
-            onOpenChange={(open) => {
-              if (!open) {
-                setCurrentPost(null); // fecha limpando o estado
-              }
-            }}
-          >
-            <DrawerContent className="h-full">
-              <DrawerHeader>
-                <DrawerTitle>Visualização de post</DrawerTitle>
-                <DrawerDescription>
-                  Detalhes completos do anúncio selecionado.
-                </DrawerDescription>
-              </DrawerHeader>
-              <CurrentPost imovel={currentPost} />
-            </DrawerContent>
-          </Drawer>
-        )}
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[130px] "></TableHead>
-            <TableHead>Titulo</TableHead>
-            <TableHead>Preço</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Localização</TableHead>
-            <TableHead>Status</TableHead>
+    <div className="flex items-start justify-center min-h-screen">
+      {isLoading ? (
+        <SearchPageSkeleton />
+      ) : (
+        <>
+          <div className="w-2/3 my-5  rounded-md">
+            <div className=" my-4 flex justify-between  items-end gap-x-5">
+              <div className="flex w-full items-center gap-2  ">
+                <div className="w-1/2 flex items-center justify-center gap-x-2">
+                  <Input
+                    className="w-full"
+                    placeholder=""
+                    ref={searchInputRef}
+                    type="search"
+                    onChange={(e) => {
+                      if (e.currentTarget.value !== "")
+                        setTempSearch(e.currentTarget.value);
+                    }}
+                    defaultValue={searchData ? searchData : ""}
+                  />
 
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((post) => (
-            <TableRow
-              key={post.id}
-              onClick={() => {
-                handleSetCurrentPost(post);
-              }}
-            >
-              <TableCell className="">
-                <Image
-                  src={post.imovelImages[0].imageUrl}
-                  width={200}
-                  height={200}
-                  className=" h-15 object-cover rounded-xs"
-                  alt={post.title}
-                />
-              </TableCell>
+                  <Button
+                    disabled={tempSearch ? false : true}
+                    className=""
+                    aria-label="clean search"
+                    type="submit"
+                    onClick={() => {
+                      setSerchData(tempSearch);
+                      setIsSearching(true);
+                    }}
+                  >
+                    <SearchIcon />
+                  </Button>
 
-              <TableCell className=" max-w-[120px] truncate ">
-                {post.title}
-              </TableCell>
-              <TableCell>{formCurrency.format(post.price)}</TableCell>
-              <TableCell>
-                {post.type.toString() === "HOUSE" ? "Casa" : null}
-                {post.type.toString() === "AP" ? "Apartamento" : null}
-                {post.type.toString() === "LAND" ? "Terreno" : null}
-              </TableCell>
-              <TableCell>
-                {post.city},{post.estate}
-              </TableCell>
-              <TableCell>
-                {post.isActive ? (
-                  <Badge variant={"secondary"}>Ativo</Badge>
+                  <div className="flex items-center justify-center gap-x-1 w-fit text-muted-foreground text-sm"></div>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-x-3">
+                <div className="h-10 flex items-center justify-end">
+                  <div className="flex items-center justify-center gap-x-2"></div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold my-1">
+                    Tipo de imóvel :{" "}
+                  </p>
+                  <Popover
+                    open={openTypeFilter}
+                    onOpenChange={setOpenTypeFilter}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-[200px] justify-between"
+                      >
+                        {typeFilterOptionList
+                          ? typeFilterOptionList.find(
+                              (framework) => framework.value === typeOption
+                            )?.label
+                          : "Mais recentes"}
+                        <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            {typeFilterOptionList.map((framework) => (
+                              <CommandItem
+                                key={framework.value}
+                                value={framework.value}
+                                onSelect={(currentValue) => {
+                                  setTypeOption(
+                                    currentValue === typeOption
+                                      ? ""
+                                      : currentValue
+                                  );
+
+                                  setTypeOption(currentValue);
+                                  setOpenTypeFilter(false);
+                                }}
+                              >
+                                <CheckIcon
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    typeOption === framework.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {framework.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div></div>
+                <div>
+                  <p className="text-xs font-semibold my-1">Ordenar por : </p>
+                  <Popover open={openFilter} onOpenChange={setOpenFilter}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-[200px] justify-between"
+                      >
+                        {filterOptionsList
+                          ? filterOptionsList.find(
+                              (framework) => framework.value === filterOption
+                            )?.label
+                          : "Mais relevantes"}
+                        <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup>
+                            {filterOptionsList.map((framework) => (
+                              <CommandItem
+                                key={framework.value}
+                                value={framework.value}
+                                onSelect={(currentValue) => {
+                                  console.log(currentValue);
+                                  setFilterOption(
+                                    currentValue === filterOption
+                                      ? ""
+                                      : currentValue
+                                  );
+
+                                  setFilterOption(currentValue);
+                                  setOpenFilter(false);
+                                }}
+                              >
+                                <CheckIcon
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    filterOption === framework.value
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {framework.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div></div>
+            </div>
+            <div className="flex items-center justify-between gap-x-2 h-6 my-7">
+              <div className="flex items-center justify-center gap-x-1">
+                {searchData ? (
+                  <div className="">
+                    <div className="flex items-center justify-center gap-x-2 relative ">
+                      <p className=" font-semibold text-2xl">
+                        Pesquisando por {searchData}{" "}
+                      </p>
+                      <Badge
+                        className="p-1 mt-2 cursor-pointer"
+                        onClick={() => {
+                          setSerchData("");
+                          setTempSearch(null);
+                          searchInputRef.current
+                            ? (searchInputRef.current.value = "")
+                            : null;
+                        }}
+                      >
+                        <X />
+                      </Badge>{" "}
+                    </div>
+                    <span className=" text-sm text-muted-foreground ">
+                      {start} - {end} de {data.pagination.totalCount} resultados
+                    </span>
+                  </div>
                 ) : (
-                  <Badge variant={"destructive"}>Oculto</Badge>
+                  <div className="">
+                    <div className="flex items-center justify-center gap-x-2 relative ">
+                      <p className=" font-semibold text-2xl">
+                        Mostrando todos os imóveis cadastrados{" "}
+                      </p>
+                    </div>
+                    <span className=" text-sm text-muted-foreground ">
+                      {start} - {end} de {data.pagination.totalCount} resultados
+                    </span>
+                  </div>
                 )}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size={"icon"}
-                      variant={"outline"}
-                      className="size-8"
+              </div>
+              <div className="flex items-center justify-center gap-x-2 mr-5">
+                <div>
+                  {Object.entries(typeFilterOptionList).map((i) => {
+                    if (i[1].value === typeOption && typeOption !== "") {
+                      return (
+                        <div key={i[0]}>
+                          <Button
+                            className="cursor-pointer"
+                            variant={"outline"}
+                            onClick={() => {
+                              setTypeOption("");
+                            }}
+                          >
+                            {" "}
+                            <Cross1Icon
+                              className="text-xs p-1"
+                              width={3}
+                              height={3}
+                            />
+                            {i[1].label}
+                          </Button>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+                <div>
+                  {Object.entries(filterOptionsList).map((i) => {
+                    if (i[1].value === filterOption && filterOption !== "") {
+                      return (
+                        <div key={i[0]}>
+                          <Button
+                            className="cursor-pointer"
+                            variant={"outline"}
+                            onClick={() => {
+                              setFilterOption("");
+                            }}
+                          >
+                            {" "}
+                            <Cross1Icon
+                              className="text-xs p-1"
+                              width={3}
+                              height={3}
+                            />
+                            {i[1].label}
+                          </Button>
+                        </div>
+                      );
+                    }
+                  })}
+                </div>
+                <div>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    defaultValue={params.status}
+                  >
+                    <ToggleGroupItem
+                      value="all"
+                      aria-label="Todos"
+                      onClick={() => handleClick("all")}
                     >
-                      <DotsHorizontalIcon />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuLabel>Edição</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      {" "}
-                      <Pen /> Editar{" "}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      {" "}
-                      <EyeClosed /> Deixar invisivel
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
+                      <List />
+                    </ToggleGroupItem>
 
-                    <DropdownMenuItem variant="destructive">
-                      <AlertCircle /> Deletar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                    <ToggleGroupItem
+                      value="active"
+                      aria-label="Ativos"
+                      onClick={() => handleClick("active")}
+                    >
+                      <PackageOpen className="h-4 w-4" />
+                    </ToggleGroupItem>
+
+                    <ToggleGroupItem
+                      value="archive"
+                      aria-label="Arquivados"
+                      onClick={() => handleClick("archive")}
+                    >
+                      <Package className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              </div>
+            </div>
+            {isLoading ? (
+              <Table className="border">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className=" h-5 w-[100px]">
+                      {" "}
+                      <Skeleton className="h-5 w-[100px] rounded-sm" />
+                    </TableHead>
+                    <TableHead>
+                      {" "}
+                      <Skeleton className="h-5 w-[100px] rounded-sm" />
+                    </TableHead>
+                    <TableHead>
+                      {" "}
+                      <Skeleton className="h-5 w-[100px] rounded-sm" />
+                    </TableHead>
+                    <TableHead className="h-5 w-[100px] rounded-sm">
+                      {" "}
+                      <Skeleton className="h-5 w-[100px] rounded-sm" />
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {skeletonArray.map((_, i) => {
+                    return (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">
+                          {" "}
+                          <Skeleton className="h-5 w-[100px] rounded-sm" />
+                        </TableCell>
+                        <TableCell>
+                          {" "}
+                          <Skeleton className="h-5 w-[100px] rounded-sm" />
+                        </TableCell>
+                        <TableCell>
+                          {" "}
+                          <Skeleton className="h-5 w-[100px] rounded-sm" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {" "}
+                          <Skeleton className="h-5 w-[100px] rounded-sm" />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <Table className="p-4 text-muted-foreground ">
+                <TableHeader>
+                  <TableRow className="bg-">
+                    <TableHead className=" ">Titulo</TableHead>
+                    <TableHead className=" ">Preço</TableHead>
+                    <TableHead className=" ">Tipo</TableHead>
+                    <TableHead className="">Localização</TableHead>
+                    <TableHead className="text-end">Status</TableHead>
+
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="border rounded-md">
+                  {data?.data.map((post: ImovelPreview) => (
+                    <TableRow
+                      key={post.id}
+                      onClick={() => {}}
+                      className="border rounded-md odd:bg-muted/50"
+                    >
+                      <TableCell className=" ">{post.title}</TableCell>
+                      <TableCell>{formCurrency.format(post.price)}</TableCell>
+                      <TableCell>
+                        {post.type.toString() === "HOUSE" ? "Casa" : null}
+                        {post.type.toString() === "AP" ? "Apartamento" : null}
+                        {post.type.toString() === "LAND" ? "Terreno" : null}
+                      </TableCell>
+                      <TableCell>
+                        {post.street} - {post.city} , {post.estate}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {post.isActive ? (
+                          <Badge
+                            variant="outline"
+                            className="gap-1.5 text-emerald-600"
+                          >
+                            <span
+                              className="size-1.5 rounded-full bg-emerald-500"
+                              aria-hidden="true"
+                            ></span>
+                            Ativo
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="gap-1.5 text-emerald-600"
+                          >
+                            <span
+                              className="size-1.5 rounded-full bg-emerald-500"
+                              aria-hidden="true"
+                            ></span>
+                            Ativo
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size={"icon"}
+                              variant={"outline"}
+                              className="size-8"
+                            >
+                              <DotsHorizontalIcon />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem>
+                              {" "}
+                              <Pen /> Editar anúncio
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              {" "}
+                              <EyeClosed /> Ocultar anúncio
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              {" "}
+                              <Archive /> Arquivar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem variant="destructive">
+                              <AlertCircle /> Deletar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                {data?.data.length === 0 ? (
+                  <TableCaption>Nenhum anúncio encontrado</TableCaption>
+                ) : null}
+              </Table>
+            )}
+            <div className="my-4">
+              {data.data.length === 0 ? null : (
+                <Pagination>
+                  <PaginationContent>
+                    {data &&
+                      Array.from({ length: data.pagination.pages }).map(
+                        (_, index) => {
+                          return (
+                            <PaginationItem key={index}>
+                              <PaginationLink
+                                isActive={
+                                  parseInt(params.page) - 1 === index
+                                    ? true
+                                    : false
+                                }
+                                href={`/user/dashboard/page/${index + 1}`}
+                              >
+                                {index + 1}{" "}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        }
+                      )}
+                    <PaginationItem>
+                      <PaginationNext href="#" />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -277,47 +702,11 @@ function Dashboard() {
 export default Dashboard;
 
 type CurrentPostProps = {
-  imovel: Imovel;
+  imovel: ImovelPreview;
+  handleSetCurrentPost: (imovel: null | ImovelPreview) => void;
 };
 
-const CurrentPost = ({ imovel }: CurrentPostProps) => {
-  const chartConfig = {
-    views: {
-      label: "Impressões",
-      color: "#6CA6C1",
-    },
-  } satisfies ChartConfig;
-
-  const favoritesConfig = {
-    favorites: {
-      label: "Favoritado",
-      color: "#846267",
-    },
-  } satisfies ChartConfig;
-
-  const chartData = [
-    { month: "Janeiro", views: 0 },
-    { month: "Feveriro", views: 3 },
-    { month: "Março", views: 4 },
-    { month: "Abril", views: 42 },
-    { month: "Maio", views: 4 },
-    { month: "Junho", views: 39 },
-    { month: "Julho", views: 32 },
-    { month: "Agosto", views: 23 },
-    { month: "Setembro", views: 34 },
-  ];
-  const favorites = [
-    { month: "Janeiro", favorites: 56 },
-    { month: "Feveriro", favorites: 3 },
-    { month: "Março", favorites: 2 },
-    { month: "Abril", favorites: 21 },
-    { month: "Maio", favorites: 12 },
-    { month: "Junho", favorites: 2 },
-    { month: "Julho", favorites: 4 },
-    { month: "Agosto", favorites: 23 },
-    { month: "Setembro", favorites: 34 },
-  ];
-
+const CurrentPost = ({ imovel, handleSetCurrentPost }: CurrentPostProps) => {
   const formCurrency = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -426,248 +815,328 @@ const CurrentPost = ({ imovel }: CurrentPostProps) => {
   };
 
   return (
-    <div className="w-full h-full px-15 ">
-      <ScrollArea className="h-full">
-        <ScrollBar />
-        <div className="grid grid-cols-6 gap-2">
-          <Card className="shadow-none justify-between">
-            <CardHeader>
-              <CardTitle>Impressões </CardTitle>
-              <CardDescription className="h-full">
-                Mostrando o total de visitas nesse anúncio até o momento.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig}>
-                <AreaChart
-                  accessibilityLayer
-                  data={chartData}
-                  margin={{
-                    left: 12,
-                    right: 12,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <defs>
-                    <linearGradient
-                      id="fillDesktop"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-views)"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-views)"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                    <linearGradient id="fillMobile" x1="1" y1="0" x2="2" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-views)"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-views)"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    dataKey="views"
-                    type="bump"
-                    fill="url(#fillMobile)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-views)"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+    <div>
+      <div className="w-full border-b sticky top-0 z-40 py-5 bg-white flex items-center justify-between ">
+        <div className=" space-x-2 mx-20">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/user">Usuário</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/user/dashboard/${imovel.userId}`}>
+                  Dashboard
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/user/dashboard/${imovel.userId}`}>
+                  Anúncios
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{imovel.id}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className=" flex items-center justify-center space-x-2 mx-20">
+          {imovel.isActive ? (
+            <Badge variant="outline" className="gap-1.5 text-emerald-600">
+              <span
+                className="size-1.5 rounded-full bg-emerald-500"
+                aria-hidden="true"
+              ></span>
+              Ativo
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1.5 text-emerald-600">
+              <span
+                className="size-1.5 rounded-full bg-emerald-500"
+                aria-hidden="true"
+              ></span>
+              Ativo
+            </Badge>
+          )}
+          <Button
+            size={"sm"}
+            variant={"outline"}
+            onClick={() => {
+              handleSetCurrentPost(null);
+            }}
+          >
+            Voltar <ChevronLeftSquare />
+          </Button>
 
-          <Card className="justify-between shadow-none">
-            <CardHeader>
-              <CardTitle>Favoritado </CardTitle>
-              <CardDescription className="">
-                Quantidade de usuários que adicionaram este imóvel à lista de
-                favoritos{" "}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="  ">
-              <ChartContainer config={favoritesConfig} className="h-fit">
-                <AreaChart
-                  accessibilityLayer
-                  data={favorites}
-                  margin={{
-                    left: 12,
-                    right: 12,
-                  }}
-                >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <defs>
-                    <linearGradient
-                      id="fillDesktop"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-favorites)"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-favorites)"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                    <linearGradient id="favorites" x1="1" y1="0" x2="2" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="var(--color-favorites)"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="var(--color-favorites)"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    dataKey="favorites"
-                    type="bump"
-                    fill="url(#favorites)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-favorites)"
-                    stackId="a"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant={"default"} size={"sm"}>
+                <Pen />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>
+                {" "}
+                <Pen /> Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                {" "}
+                <EyeIcon /> Ocultar
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                {" "}
+                <Archive /> Arquivar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem variant="destructive">
+                <Trash /> Deletar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <div className="w-full h-full px-20 my-5">
+        <h2 className="text-2xl font-semibold">Detalhes do anúncio</h2>
+        <p className="text-muted-foreground mb-4">
+          Aqui você acompanha as informações do seu anúncio, métricas de
+          desempenho e interessados no imóvel.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-5">
+          <div className="flex flex-col items-start gap-2 p-4 border rounded-lg shadow-sm bg-white">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <p className="text-sm text-muted-foreground">Status</p>
+
+              <ToggleLeft
+                className="text-muted-foreground"
+                width={20}
+                height={20}
+              />
+            </div>
+            {imovel.isActive ? (
+              <p className="text-sm">Ativo</p>
+            ) : (
+              <p className="text-sm"> Oculto</p>
+            )}
+            <span className="text-muted-foreground text-xs">
+              Visível nos resultados de busca
+            </span>
+          </div>
+
+          {/* Destaque */}
+
+          <div className="flex flex-col items-start gap-2 p-4 border rounded-lg shadow-sm bg-white">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <p className="text-sm text-muted-foreground">Destaque</p>
+
+              <AwardIcon
+                className="text-muted-foreground"
+                width={20}
+                height={20}
+              />
+            </div>
+            {imovel.isFeatured ? (
+              <p className="text-sm">Em destaque</p>
+            ) : (
+              <p className="text-sm">Normal</p>
+            )}
+            <span className="text-muted-foreground text-xs">
+              Anúncio promovido para maior visibilidade
+            </span>
+          </div>
+
+          {/* Publicado em */}
+          <div className="flex flex-col items-start gap-2 p-4 border rounded-lg shadow-sm bg-white">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <p className="text-sm text-muted-foreground">Publicado</p>
+
+              <Calendar
+                className="text-muted-foreground"
+                width={20}
+                height={20}
+              />
+            </div>
+            <p className="font-medium text-sm">
+              {new Date(imovel.postedAt).toLocaleDateString("pt-BR")}
+            </p>
+            <span className="text-xs text-muted-foreground">
+              Data em que o anúncio foi criado
+            </span>
+          </div>
+
+          {/* Última atualização */}
+          <div className="flex flex-col items-start gap-2 p-4 border rounded-lg shadow-sm bg-white">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <p className="text-sm text-muted-foreground">Atualização</p>
+
+              <Edit2 className="text-muted-foreground" width={20} height={20} />
+            </div>
+            <p className="font-medium text-sm">
+              {new Date(imovel.lastUpdate).toLocaleDateString("pt-BR")}
+            </p>
+            <span className="text-xs text-muted-foreground">
+              Última modificação do anúncio
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2">
-          <div>
+        <div className="grid grid-cols-2 space-y-4 gap-x-10">
+          <div className="">
+            <h1 className="my-2 text-sm">Código do anúncio : {imovel.id}</h1>
             <h1 className="scroll-m-20 text-start text-4xl font-extrabold tracking-tight text-balance my-3">
               {imovel.title}
             </h1>
-            <p className="scroll-m-20 text-start text-2xl font-bold tracking-tight text-balance my-5">
-              {formCurrency.format(imovel.price)}
-            </p>
-            {imovel.gatedCommunity_price && (
-              <div>
-                <p>Condomínio</p>
-                <p className=" text-start text-2xl font-bold tracking-tight text-balance my-5">
-                  {formCurrency.format(imovel.gatedCommunity_price)}
+            <div className="flex items-center justify-between">
+              <div className="my-5">
+                <p className=" text-start text-2xl font-bold tracking-tight text-balance">
+                  {formCurrency.format(imovel.price)}
                 </p>
               </div>
-            )}
-            <div dangerouslySetInnerHTML={{ __html: imovel.description }}></div>{" "}
-            <div className=" w-full bg-white rounded-xl  p-6">
-              <div>
-                <h1 className="text-2xl font-bold  mb-3 flex items-center">
-                  <i className="  mr-2"></i>
-                  Detalhes do imóvel
-                </h1>
-
-                <div className="flex flex-wrap gap-2 my-2 p-2">
-                  <div className="flex flex-wrap items-center ">
-                    {Object.keys(imovel).map((key) => {
-                      const value = (imovel as any)[key];
-                      if (typeof value !== "boolean" || !value) return null;
-
-                      if (key === "isFinan" || key === "isActive") return;
-                      return (
-                        <div key={key} className="text-xs px-2 py-2 w-fit">
-                          <Badge variant={"outline"}>
-                            <CheckIcon /> {featureLabels[key] ?? key}
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>{" "}
+              {imovel.gatedCommunity_price > 0 && (
+                <div className="my-5">
+                  <p className="text-sm text-end">Condomínio</p>
+                  <p className=" text-start text-2xl font-bold tracking-tight text-balance">
+                    {formCurrency.format(imovel.gatedCommunity_price)}{" "}
+                    <span className="text-xs text-muted-foreground font-medium">
+                      / Mês{" "}
+                    </span>
+                  </p>
                 </div>
-              </div>
+              )}
+            </div>
+            <div
+              className="my-5 text-sm"
+              dangerouslySetInnerHTML={{ __html: imovel.description }}
+            ></div>{" "}
+            <div className=" w-full bg-white rounded-xl space-y-6 my-6  ">
               <div>
-                <h1 className="text-2xl font-bold  mb-3 flex items-center">
-                  <i className="  mr-2"></i>
-                  Opções de Financiamento do Imóvel
-                </h1>
+                {Object.keys(imovel).length < 1 ? null : (
+                  <div>
+                    <h1 className="text-2xl font-bold  mb-3 flex items-center">
+                      <i className=""></i>
+                      Detalhes do imóvel
+                    </h1>
 
-                <div className="flex flex-wrap gap-2 my-2">
-                  {imovel.financeBanks.length > 0 &&
-                    imovel.financeBanks.map((i) => (
-                      <div key={i} className="text-xs px-2 py-2">
+                    <div className="grid grid-cols-4">
+                      {Object.keys(imovel).map((key) => {
+                        const value = (imovel as any)[key];
+                        if (typeof value !== "boolean" || !value) return null;
+
+                        if (key === "isFinan" || key === "isActive") return;
+
+                        return (
+                          <div key={key} className="text-xs px-2 py-2 w-fit">
+                            <Badge variant={"outline"}>
+                              <CheckIcon /> {featureLabels[key] ?? key}
+                            </Badge>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {imovel.financeBanks.length > 0 ? (
+                <div>
+                  <h1 className="text-2xl font-bold  mb-3 flex items-center">
+                    <i className=""></i>
+                    Opções de Financiamento do Imóvel
+                  </h1>
+
+                  <div className="grid grid-cols-2 gap-2 w-fit">
+                    {imovel.financeBanks.map((i) => (
+                      <div key={i} className="text-xs px-2 py-2 w-fit">
                         {i}
                       </div>
                     ))}
+                  </div>
                 </div>
+              ) : null}
+
+              <div className="">
+                <h1 className="text-2xl font-bold  mb-3 flex items-center">
+                  Localização
+                </h1>
+                <p className="text-sm ">{imovel.log}</p>
+                <p className="text-sm text-muted-foreground ">
+                  {imovel.street}, {imovel.city} - {imovel.estate} ,{" "}
+                  {imovel.CEP}
+                </p>
               </div>
             </div>
           </div>
 
-          <div>
-            <Carousel className="col-span-4 mx-3 p-0 ">
-              <CarouselContent className="h-full">
-                {imovel.imovelImages.map((i) => {
-                  return (
-                    <CarouselItem
-                      className="md:basis-1/2 lg:basis-1/3  "
-                      key={i.id}
-                    >
-                      <Image
-                        src={i.imageUrl}
-                        width={600}
-                        height={600}
-                        alt={i.imovelId}
-                        className="aspect-square h-full object-cover rounded-md"
-                      />
-                    </CarouselItem>
-                  );
-                })}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
-          </div>
+          <div></div>
         </div>
-
-        <p className="h-[300px]"></p>
-      </ScrollArea>
+      </div>
     </div>
   );
 };
+
+function SearchPageSkeleton() {
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      {/* Barra de pesquisa */}
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-10 w-80 rounded-lg" /> {/* Input */}
+        <Skeleton className="h-10 w-10 rounded-lg" /> {/* Botão */}
+      </div>
+
+      {/* Filtros */}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-32 rounded-lg" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-40 rounded-lg" />
+        </div>
+      </div>
+
+      {/* Resultados */}
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-6 w-60" /> {/* Texto "Pesquisando por..." */}
+        <Skeleton className="h-4 w-40" /> {/* Texto "1-6 de x resultados" */}
+      </div>
+
+      {/* Tabela */}
+      <div className="border rounded-lg overflow-hidden">
+        {/* Cabeçalho */}
+        <div className="grid grid-cols-5 gap-4 border-b bg-muted px-4 py-2">
+          <Skeleton className="h-4 w-24" /> {/* Título */}
+          <Skeleton className="h-4 w-16" /> {/* Preço */}
+          <Skeleton className="h-4 w-16" /> {/* Tipo */}
+          <Skeleton className="h-4 w-32" /> {/* Localização */}
+          <Skeleton className="h-4 w-16" /> {/* Status */}
+        </div>
+
+        {/* Linhas */}
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="grid grid-cols-5 gap-4 border-b px-4 py-3 items-center"
+          >
+            <Skeleton className="h-4 w-60" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-12" />
+            <Skeleton className="h-4 w-40" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-12 rounded-full" /> {/* Status */}
+              <Skeleton className="h-6 w-6 rounded-full" /> {/* Menu */}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Paginação */}
+      <div className="flex items-center justify-center gap-4 pt-4">
+        <Skeleton className="h-8 w-8 rounded-lg" />
+        <Skeleton className="h-8 w-16 rounded-lg" />
+      </div>
+    </div>
+  );
+}

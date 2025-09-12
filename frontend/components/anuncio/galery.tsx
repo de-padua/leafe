@@ -80,7 +80,7 @@ export default function Galery({ getFiles }: GaleryProps) {
   /// IMAGE GALERY
   const maxSizeMB = 5;
   const maxSize = maxSizeMB * 1024 * 1024;
-  const maxFiles = 10;
+  const maxFiles = 15;
 
   const [
     { files, isDragging, errors },
@@ -98,7 +98,7 @@ export default function Galery({ getFiles }: GaleryProps) {
     multiple: true,
     maxFiles,
     maxSize,
-    accept: "image/png ,image/jpeg ",
+    accept: "image/png ,image/jpeg , image/webp",
   });
 
   useEffect(() => {
@@ -196,7 +196,6 @@ export default function Galery({ getFiles }: GaleryProps) {
               Máximo de {maxFiles} fotos ∙ Até {maxSizeMB}MB
             </p>
             <Button
-              type="button"
               type="button"
               variant="outline"
               className="mt-4 text-sm text-muted-foreground cursor-pointer"

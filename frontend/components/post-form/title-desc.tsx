@@ -16,9 +16,7 @@ import {
 } from "@/components/ui/form";
 
 import { Input } from "@/components/ui/input";
-import { SimpleEditor } from "../tiptap-templates/simple/simple-editor";
 import { useFormState } from "@/lib/stores/formStore";
-import { BackButtonForm, NextButtonForm } from "./formNextButton";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 const formSchema = z.object({
@@ -79,7 +77,6 @@ function TitleDescriptionForm() {
                 <FormItem>
                   <FormLabel>Descrição</FormLabel>
 
-                  <SimpleEditor getData={getData} />
                   <FormControl></FormControl>
                   <FormMessage />
                 </FormItem>

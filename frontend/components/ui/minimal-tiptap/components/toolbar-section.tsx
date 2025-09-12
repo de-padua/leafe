@@ -53,7 +53,6 @@ export const ToolbarSection: React.FC<ToolbarSectionProps> = ({
   const renderToolbarButton = React.useCallback(
     (action: FormatAction) => (
       <ToolbarButton
-        
         key={action.label}
         onClick={() => action.action(editor)}
         disabled={!action.canExecute(editor)}
@@ -61,7 +60,7 @@ export const ToolbarSection: React.FC<ToolbarSectionProps> = ({
         tooltip={`${action.label} ${action.shortcuts.map((s) => getShortcutKey(s).symbol).join(" ")}`}
         aria-label={action.label}
         size={size}
-        variant={"outline"}
+        variant={variant}
       >
         {action.icon}
       </ToolbarButton>

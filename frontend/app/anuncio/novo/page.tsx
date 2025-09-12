@@ -94,17 +94,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { RichTextEditorDemo } from "@/components/tiptap/rich-text-editor";
 
 const formSchema = z
   .object({
     title: z
       .string()
       .min(5, { message: "O título precisa ter no mínimo 5 caracteres" })
-      .max(50, { message: "O título pode ter no máximo 50 caracteres" }),
+      .max(200, { message: "O título pode ter no máximo 200 caracteres" }),
     description: z
       .string()
       .min(10, { message: "A descrição precisa ter no mínimo 10 caracteres" })
-      .max(2000, { message: "A descrição pode ter no máximo 700 caracteres" }),
+      .max(5000, { message: "A descrição pode ter no máximo 5000 caracteres" }),
     log: z.string().min(5, {
       message: "O logradouro precisa ter no mínimo 5 caracteres",
     }),
@@ -631,13 +632,16 @@ function page() {
     if (isFinan) {
       setAccordionValue("financeBanks");
     }
-      if ( form.getFieldState("area").invalid ||  form.getFieldState("built").invalid || form.getFieldState("pool_size").invalid ) {
-        form.clearErrors("area");
-        form.clearErrors("pool_size");
-        form.clearErrors("built");
-
+    if (
+      form.getFieldState("area").invalid ||
+      form.getFieldState("built").invalid ||
+      form.getFieldState("pool_size").invalid
+    ) {
+      form.clearErrors("area");
+      form.clearErrors("pool_size");
+      form.clearErrors("built");
     }
-  }, [cepFormWatcher, isGatedComunity, isPoolMarked, isFinan,type]);
+  }, [cepFormWatcher, isGatedComunity, isPoolMarked, isFinan, type]);
 
   const types = [
     {
@@ -690,7 +694,12 @@ function page() {
     { value: "5", label: "5" },
   ];
   const financeBanks = [
-    { value: "Itaú Unibanco", label: "Itaú Unibanco", Icon: "", defaultChecked: true },
+    {
+      value: "Itaú Unibanco",
+      label: "Itaú Unibanco",
+      Icon: "",
+      defaultChecked: true,
+    },
     { value: "Banco do Brasil", label: "Banco do Brasil", Icon: "" },
     { value: "BradescO", label: "Bradesco", Icon: "" },
     { value: "Caixa Econômica", label: "Caixa Econômica", Icon: "" },
@@ -2556,13 +2565,23 @@ function page() {
                           <FormItem>
                             <FormControl className="">
                               <MinimalTiptapEditor
+                                value={() => {
+                                  form.getValues().description.length === 0
+                                    ? undefined
+                                    : form.getValues().description;
+                                }}
                                 onChange={(value) => {
-                                  form.setValue("description", value as string);
+                                  if (!value) return;
+                                  form.setValue(
+                                    "description",
+                                    value.toString()
+                                  );
                                 }}
                                 className="w-full"
                                 editorContentClassName="p-5"
                                 output="html"
-                                placeholder="Descreva a propiedade"
+                                placeholder="Enter your description..."
+                                autofocus={false}
                                 editable={true}
                                 editorClassName="focus:outline-hidden"
                               />
@@ -3674,7 +3693,7 @@ function Success() {
       {/* Botões de ação */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Button asChild variant="outline">
-          <Link href="/user/dashboard">Ver Meus Anúncios</Link>
+          <Link href="/user/dashboard/page/1">Ver Meus Anúncios</Link>
         </Button>
         <Button asChild>
           <Link href="/anuncio/novo">Criar Outro Anúncio</Link>
