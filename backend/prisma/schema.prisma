@@ -94,7 +94,7 @@ enum PropertyType {
   LAND
 }
 
-model imovel {  
+model imovel {    
   id        String   @id  @unique
   title     String
   postedAt  DateTime @default(now())

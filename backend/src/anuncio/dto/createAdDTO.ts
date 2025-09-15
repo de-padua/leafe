@@ -20,17 +20,16 @@ export enum PropertyType {
   // adicione outros tipos se tiver no seu zodSchema
 }
 const allowedBanks = [
-  
-  'itau',
-  'bb',
-  'bradesco',
-  'caixa',
-  'santander',
-  'btg',
-  'sicredi',
-  'sicoob',
-  'safra',
-  'citibank',
+  "Itaú Unibanco",
+  "Banco do Brasil",
+  "Bradesco",
+  "Caixa Econômica",
+  "Santander Brasil",
+  "BTG Pactual",
+  "Sicredi",
+  "Sicoob",
+  "Banco Safra",
+  "Citibank Brasil"
 ] as const;
 
 export class CreatePropertyDto {

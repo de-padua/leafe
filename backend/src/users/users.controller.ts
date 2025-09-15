@@ -101,9 +101,9 @@ export class UsersController {
 
   @Get('public') 
   async getPublicUserData(@Query() query: GetPublicUserDataQuery) {
-    const { userId , sort, offset, limit } = query
+    const { userId , sort, offset, limit,price} = query
  
-    const publicUserData = await this.UserService.getProfileUserData(userId,offset,sort,null,limit)
+    const publicUserData = await this.UserService.getProfileUserData(userId,offset,sort,null,limit,price)
     
     return publicUserData
   }

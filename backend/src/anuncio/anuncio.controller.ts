@@ -30,7 +30,8 @@ export class AnuncioController {
     @Body() body: CreatePropertyDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (!request.id) return HttpStatus.UNAUTHORIZED;
+    try{
+      if (!request.id) return HttpStatus.UNAUTHORIZED;
 
     const userId = request.id;
 
@@ -40,7 +41,14 @@ export class AnuncioController {
       success: true,
       data: data,
     };
+    }
+    catch(err){
+      throw err
+    }
   }
+
+
+  
 
   @Post('pictures')
   @UseGuards(AuthGuard)
@@ -50,11 +58,15 @@ export class AnuncioController {
     @UploadedFiles() files: FileDTO[],
     @Body() body: any,
   ) {
-    if (!request.id) return HttpStatus.UNAUTHORIZED;
-    const postId = Array.isArray(body.id) ? body.id[0] : body.id;
-    const data = await this.anuncioService.uploadImages(files, postId);
-    return {
-      success: data.success,
-    };
+    try {
+      if (!request.id) return HttpStatus.UNAUTHORIZED;
+      const postId = Array.isArray(body.id) ? body.id[0] : body.id;
+      const data = await this.anuncioService.uploadImages(files, postId);
+      return {
+        success: data.success,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }

@@ -232,30 +232,36 @@ export class UsersService {
   };
 
   getProfileUserData = async (
-    userId: string | undefined ,
-    pageOffset: string  | undefined,
-    sort: string  | undefined,
-    category: "AP" | "HOUSE" | null,
-    limit:string | undefined
+    userId: string | undefined,
+    pageOffset: string | undefined,
+    sort: string | undefined,
+    category: 'AP' | 'HOUSE' | null,
+    limit: string | undefined,
+    price: string | undefined,
   ) => {
+    const orderBy: {}[] = [];
+
+    if (sort) {
+      orderBy.push({ postedAt: sort });
+    }
+
+    if (price) {
+      orderBy.push({ price: price });
+    }
     const data = await this.prisma.imovel.findMany({
       where: {
         userId,
         type: category ? category : undefined,
-       
       },
-      skip: pageOffset ? parseInt("0") : 10 ,
-      take:limit ? parseInt(limit) : 10,
-      orderBy: {
-        postedAt: sort === 'asc' ? 'asc' : 'desc',
+      skip: pageOffset ? parseInt(pageOffset) : parseInt('0'),
+      take:  10,
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      include: {
+        imovelImages: true,
       },
-      include:{
-        user:true,
-        imovelImages:true
-      }
     });
- 
-    console.log(data)
-    return data
+
+    console.log(data);
+    return data;
   };
 }

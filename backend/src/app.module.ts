@@ -16,6 +16,9 @@ import { join } from 'path';
 import { AnuncioController } from './anuncio/anuncio.controller';
 import { AnuncioService } from './anuncio/anuncio.service';
 
+import { DashboardController } from './dashboard/dashboard.controller';
+import { DashboardService } from './dashboard/dashboard.service';
+
 const isProd = false;
 @Module({
   imports: [
@@ -47,8 +50,8 @@ const isProd = false;
       secret: process.env.JWT_SECRET, 
     }),
   ],
-  controllers: [UsersController, AuthController, EmailController, AnuncioController],
-  providers: [PrismaService, UsersService, AuthService, EmailService, AnuncioService],
+  controllers: [UsersController, AuthController, EmailController, AnuncioController,DashboardController],
+  providers: [PrismaService, UsersService, AuthService, EmailService, AnuncioService, DashboardService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {}

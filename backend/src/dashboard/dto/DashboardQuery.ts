@@ -1,8 +1,7 @@
 import { IsOptional, IsString, IsNumberString } from "class-validator";
 
-export default class GetPublicUserDataQuery {
-  @IsString()
-  userId: string;
+export default class DashboardQuery {
+
 
   @IsOptional()
   @IsString()
