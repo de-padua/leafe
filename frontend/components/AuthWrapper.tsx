@@ -15,8 +15,6 @@ export default function AuthWrapper({
   const { data, error } = useQuery({
     queryKey: ["userData"],
     queryFn: () => getUserData({ setLoading }),
-    
-
   });
 
   useEffect(() => {

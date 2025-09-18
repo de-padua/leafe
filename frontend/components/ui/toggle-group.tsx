@@ -40,7 +40,7 @@ function ToggleGroup({
   )
 }
 
-function ToggleGroupItem({
+function  ToggleGroupItem({
   className,
   children,
   variant,

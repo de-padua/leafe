@@ -6,7 +6,7 @@ import { DropdownMenu } from '@/components/tiptap-ui-primitive/dropdown-menu';
 import { DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../../dropdown-menu';
 import { Button } from '../../button';
 import { Badge } from '../../badge';
-
+                  
 
 export interface FilterOption {
   id: string;

@@ -1,4 +1,7 @@
 "use client";
+
+/* bug : fix pagination when changing categories and filters,set page to 1 again*/
+
 dotenv.config();
 import * as dotenv from "dotenv";
 import { Imovel } from "@/types";
@@ -35,6 +38,8 @@ import { Cross1Icon, DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   AlertCircle,
   Archive,
+  ArrowLeft,
+  ArrowLeftIcon,
   ArrowRightIcon,
   AwardIcon,
   Calendar,
@@ -111,8 +116,8 @@ export type ImovelPreview = {
 
 function Dashboard() {
   const router = useRouter();
-  const params = useParams<{ page: string; status: string }>();
-
+  const pageParams = useParams<{ page: string; status: string }>();
+  let params = new URLSearchParams();
   const skeletonArray = Array.from({ length: 10 });
 
   const [currentPost, setCurrentPost] = useState<{
@@ -122,7 +127,7 @@ function Dashboard() {
 
   const [openFilter, setOpenFilter] = React.useState(false);
   const [openTypeFilter, setOpenTypeFilter] = React.useState(false);
-  const [openIsActiveFilter, setIsActiveFilter] = React.useState(false);
+  const [openVisuFilter, setOpenVisuFilter] = React.useState(false);
 
   const filterOptionsList = [
     { label: "Mais relevantes", value: "" },
@@ -138,43 +143,54 @@ function Dashboard() {
     { label: "Terreno", value: "LAND" },
   ];
 
+  const visualizationOptionList = [
+    { label: "Todos", value: "" },
+    { label: "Ativo", value: true },
+    { label: "Arquivados", value: false },
+  ];
+
+  const route = useRouter();
+
   const [searchData, setSerchData] = useState<string | null>(null);
   const [filterOption, setFilterOption] = useState(filterOptionsList[0].value);
   const [typeOption, setTypeOption] = useState(typeFilterOptionList[0].value);
+
+  const [visuOption, setCurrentOption] = useState(
+    visualizationOptionList[0].value
+  );
 
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [tempSearch, setTempSearch] = useState<string | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const determineStatusPage =
-    params.status === "all"
-      ? null
-      : params.status === "active"
-      ? true
-      : params.status === "archive"
-      ? false
-      : null;
+  
+
+
+ 
+  const searchParams = new URLSearchParams()
+  
+   if(visuOption !== "") searchParams.append("isActive",visuOption.toString())
+   if(typeOption !== "") searchParams.append("type",typeOption.toString())
+   if(filterOption) searchParams.append("filterBy",filterOption.toString())
+   if(searchData) searchParams.append("search",searchData.toString())
+
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: [searchData, typeOption, filterOption],
+    queryKey: [searchData, typeOption, filterOption, visuOption],
     queryFn: async () => {
       try {
-        const response = await fetch(`http://localhost:5000/dashboard/ `, {
-          method: "POST",
+
+        const response = await fetch( `http://localhost:5000/dashboard/${searchParams}`, {
+          method: "GET",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            type: typeOption === "" ? null : typeOption,
-            filterBy: filterOption === "" ? null : filterOption,
-            search: searchData ? searchData : null,
-            pageOffset: (parseInt(params.page) - 1) * 10,
-            isActive: determineStatusPage,
-          }),
+         
         });
-
+   
+        console.log(`http://localhost:5000/dashboard/${searchParams}`)
         if (!response.ok) {
           if (response.status === 404) {
             throw error;
@@ -194,7 +210,7 @@ function Dashboard() {
           data: ImovelPreview[];
         } = await response.json();
 
-        console.log(data);
+       
 
         return data;
       } catch (err) {
@@ -209,7 +225,6 @@ function Dashboard() {
     minimumFractionDigits: 2,
   });
 
-
   if (isLoading) {
     return (
       <div className="flex items-start justify-center min-h-screen">
@@ -219,6 +234,7 @@ function Dashboard() {
       </div>
     );
   }
+
   if (!data) {
     return (
       <div className="flex items-start justify-center min-h-screen">
@@ -229,22 +245,16 @@ function Dashboard() {
     );
   }
 
-  const page = parseInt(params.page);
+  const page = parseInt(pageParams.page);
   const perPage = 10;
 
   const start = (page - 1) * perPage + 1;
   const end = Math.min(page * perPage, data.pagination.totalCount);
 
-  const handleClick = (status: string) => {
-    router.push(`/user/dashboard/page/1/status/${status}`);
-  };
-
   return (
-    <div className="flex items-start justify-center min-h-screen">
-      {isLoading ? (
-        <SearchPageSkeleton />
-      ) : (
-        <>
+    <div>
+      {data.data ? (
+        <div className="flex items-start justify-center min-h-screen mask-linear-to-background">
           <div className="w-2/3 my-5  rounded-md">
             <div className=" my-4 flex justify-between  items-end gap-x-5">
               <div className="flex w-full items-center gap-2  ">
@@ -394,12 +404,75 @@ function Dashboard() {
                     </PopoverContent>
                   </Popover>
                 </div>
+                <div>
+                  <div className="">
+                    <p className="text-xs font-semibold my-1">
+                      Visualização :{" "}
+                    </p>
+                  </div>
+                  <div>
+                    <Popover
+                      open={openVisuFilter}
+                      onOpenChange={setOpenVisuFilter}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className="w-[200px] justify-between"
+                        >
+                          {visualizationOptionList
+                            ? visualizationOptionList.find(
+                                (framework) => framework.value === visuOption
+                              )?.label
+                            : "Mais recentes"}
+                          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-0">
+                        <Command>
+                          <CommandList>
+                            <CommandGroup>
+                              {visualizationOptionList.map((framework) => (
+                                <CommandItem
+                                  key={framework.value}
+                                  value={framework.value.toString()}
+                                  onSelect={(currentValue) => {
+                                    setCurrentOption(
+                                      currentValue === "false"
+                                        ? false
+                                        : currentValue === "true"
+                                        ? true
+                                        : currentValue
+                                    );
+
+                                    setOpenVisuFilter(false);
+                                  }}
+                                >
+                                  <CheckIcon
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      visuOption === framework.value
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  {framework.label}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
               </div>
 
               <div></div>
             </div>
-            <div className="flex items-center justify-between gap-x-2 h-6 my-7">
-              <div className="flex items-center justify-center gap-x-1">
+            <div className="flex items-end justify-between gap-x-2  my-7  ">
+              <div className="flex items-center justify-center gap-x-1 ">
                 {searchData ? (
                   <div className="">
                     <div className="flex items-center justify-center gap-x-2 relative ">
@@ -407,7 +480,8 @@ function Dashboard() {
                         Pesquisando por {searchData}{" "}
                       </p>
                       <Badge
-                        className="p-1 mt-2 cursor-pointer"
+                        className=" mt-2 cursor-pointer"
+                        variant={"outline"}
                         onClick={() => {
                           setSerchData("");
                           setTempSearch(null);
@@ -416,7 +490,7 @@ function Dashboard() {
                             : null;
                         }}
                       >
-                        <X />
+                        <ArrowLeftIcon />
                       </Badge>{" "}
                     </div>
                     <span className=" text-sm text-muted-foreground ">
@@ -425,9 +499,22 @@ function Dashboard() {
                   </div>
                 ) : (
                   <div className="">
-                    <div className="flex items-center justify-center gap-x-2 relative ">
-                      <p className=" font-semibold text-2xl">
-                        Mostrando todos os imóveis cadastrados{" "}
+                    <div className="flex items-center justify-start gap-x-1  ">
+                      <p className=" font-semibold text-2xl mask-linear-to-background">
+                        Mostrando todos os anúncios
+                        {Object.entries(typeFilterOptionList).map((i) => {
+                          if (i[1].value === typeOption && typeOption !== "") {
+                            return (
+                              <span
+                                key={i[0]}
+                                className="mask-linear-to-background"
+                              >
+                                {" "}
+                                em {i[1].label.toLowerCase()}
+                              </span>
+                            );
+                          }
+                        })}
                       </p>
                     </div>
                     <span className=" text-sm text-muted-foreground ">
@@ -435,28 +522,29 @@ function Dashboard() {
                     </span>
                   </div>
                 )}
+
+                <div></div>
               </div>
-              <div className="flex items-center justify-center gap-x-2 mr-5">
+              <div className="flex items-start justify-center gap-x-2 mr-5">
                 <div>
                   {Object.entries(typeFilterOptionList).map((i) => {
                     if (i[1].value === typeOption && typeOption !== "") {
                       return (
                         <div key={i[0]}>
-                          <Button
+                          <Badge
                             className="cursor-pointer"
-                            variant={"outline"}
                             onClick={() => {
                               setTypeOption("");
                             }}
                           >
                             {" "}
+                            {i[1].label}
                             <Cross1Icon
-                              className="text-xs p-1"
+                              className=" mt-[2px]"
                               width={3}
                               height={3}
                             />
-                            {i[1].label}
-                          </Button>
+                          </Badge>
                         </div>
                       );
                     }
@@ -467,61 +555,55 @@ function Dashboard() {
                     if (i[1].value === filterOption && filterOption !== "") {
                       return (
                         <div key={i[0]}>
-                          <Button
+                          <Badge
                             className="cursor-pointer"
-                            variant={"outline"}
                             onClick={() => {
                               setFilterOption("");
                             }}
                           >
                             {" "}
+                            {i[1].label}
                             <Cross1Icon
-                              className="text-xs p-1"
+                              className=" mt-[2px]"
                               width={3}
                               height={3}
                             />
-                            {i[1].label}
-                          </Button>
+                          </Badge>
                         </div>
                       );
                     }
                   })}
                 </div>
                 <div>
-                  <ToggleGroup
-                    type="single"
-                    variant="outline"
-                    defaultValue={params.status}
-                  >
-                    <ToggleGroupItem
-                      value="all"
-                      aria-label="Todos"
-                      onClick={() => handleClick("all")}
-                    >
-                      <List />
-                    </ToggleGroupItem>
-
-                    <ToggleGroupItem
-                      value="active"
-                      aria-label="Ativos"
-                      onClick={() => handleClick("active")}
-                    >
-                      <PackageOpen className="h-4 w-4" />
-                    </ToggleGroupItem>
-
-                    <ToggleGroupItem
-                      value="archive"
-                      aria-label="Arquivados"
-                      onClick={() => handleClick("archive")}
-                    >
-                      <Package className="h-4 w-4" />
-                    </ToggleGroupItem>
-                  </ToggleGroup>
+                  {Object.entries(visualizationOptionList).map((i) => {
+                    if (i[1].value === visuOption && visuOption !== "") {
+                      return (
+                        <div key={i[0]}>
+                          <Badge
+                            className="cursor-pointer"
+                            onClick={() => {
+                              setCurrentOption(
+                                visualizationOptionList[0].value
+                              );
+                            }}
+                          >
+                            {" "}
+                            {i[1].label}
+                            <Cross1Icon
+                              className=" mt-[2px]"
+                              width={3}
+                              height={3}
+                            />
+                          </Badge>
+                        </div>
+                      );
+                    }
+                  })}
                 </div>
               </div>
             </div>
             {isLoading ? (
-              <Table className="border">
+              <Table className="">
                 <TableHeader>
                   <TableRow>
                     <TableHead className=" h-5 w-[100px]">
@@ -580,12 +662,12 @@ function Dashboard() {
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="border rounded-md">
+                <TableBody className="">
                   {data?.data.map((post: ImovelPreview) => (
                     <TableRow
                       key={post.id}
                       onClick={() => {}}
-                      className="border rounded-md odd:bg-muted/50"
+                      className=" odd:bg-muted/50"
                     >
                       <TableCell className=" ">{post.title}</TableCell>
                       <TableCell>{formCurrency.format(post.price)}</TableCell>
@@ -673,7 +755,7 @@ function Dashboard() {
                             <PaginationItem key={index}>
                               <PaginationLink
                                 isActive={
-                                  parseInt(params.page) - 1 === index
+                                  parseInt(pageParams.page) - 1 === index
                                     ? true
                                     : false
                                 }
@@ -685,15 +767,14 @@ function Dashboard() {
                           );
                         }
                       )}
-                    <PaginationItem>
-                      <PaginationNext href="#" />
-                    </PaginationItem>
                   </PaginationContent>
                 </Pagination>
               )}
             </div>
           </div>
-        </>
+        </div>
+      ) : (
+        <SearchPageSkeleton />
       )}
     </div>
   );

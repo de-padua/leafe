@@ -3696,7 +3696,7 @@ function Success() {
           <Link href="/user/dashboard/page/1">Ver Meus Anúncios</Link>
         </Button>
         <Button asChild>
-          <Link href="/anuncio/novo">Criar Outro Anúncio</Link>
+          <Link href="/anuncio/novo#" >Criar Outro Anúncio</Link>
         </Button>
       </div>
     </div>
