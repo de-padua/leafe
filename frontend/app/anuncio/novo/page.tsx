@@ -2476,21 +2476,7 @@ function page() {
     },
   ];
 
-  if (isPostCreated) {
-    return <Success />;
-  }
-
-  if (isLoading) {
-    return (
-      <LoaderCustom className=" h-screen flex flex-col items-center justify-center space-y-4 p-6">
-        <LoaderIcon className="h-12 w-12 animate-spin e drop-shadow-lg" />
-        <h2 className="text-xl font-semibold tracking-wide text-center">
-          Aguarde, estamos criando seu post...
-        </h2>
-        <p className="text-sm  text-center">Isso pode levar alguns segundos.</p>
-      </LoaderCustom>
-    );
-  }
+  
   return (
     <div className="">
       <div className="flex items-center justify-center flex-col ">
@@ -3693,7 +3679,7 @@ function Success() {
       {/* Botões de ação */}
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Button asChild variant="outline">
-          <Link href="/user/dashboard/page/1">Ver Meus Anúncios</Link>
+          <Link href="/user/dashboard/imovel?page=1">Ver Meus Anúncios</Link>
         </Button>
         <Button asChild>
           <Link href="/anuncio/novo#" >Criar Outro Anúncio</Link>
@@ -3747,3 +3733,21 @@ function Body({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
+
+
+
+/**if (isPostCreated) {
+    return <Success />;
+  }
+
+  if (isLoading) {
+    return (
+      <LoaderCustom className=" h-screen flex flex-col items-center justify-center space-y-4 p-6">
+        <LoaderIcon className="h-12 w-12 animate-spin e drop-shadow-lg" />
+        <h2 className="text-xl font-semibold tracking-wide text-center">
+          Aguarde, estamos criando seu post...
+        </h2>
+        <p className="text-sm  text-center">Isso pode levar alguns segundos.</p>
+      </LoaderCustom>
+    );
+  } */

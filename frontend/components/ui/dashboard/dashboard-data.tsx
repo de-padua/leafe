@@ -97,7 +97,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { data } from "@/components/custom/estate-filter";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 export const description = "An area chart with gradient fill";
 
 export type ImovelPreview = {
@@ -115,9 +115,11 @@ export type ImovelPreview = {
 };
 
 function Dashboard() {
+  const searchParams = useSearchParams();
+  const params = new URLSearchParams(searchParams);
+
   const router = useRouter();
   const pageParams = useParams<{ page: string; status: string }>();
-  let params = new URLSearchParams();
   const skeletonArray = Array.from({ length: 10 });
 
   const [currentPost, setCurrentPost] = useState<{
@@ -145,52 +147,45 @@ function Dashboard() {
 
   const visualizationOptionList = [
     { label: "Todos", value: "" },
-    { label: "Ativo", value: true },
-    { label: "Arquivados", value: false },
+    { label: "Ativo", value: "active" },
+    { label: "Arquivados", value: "archived" },
   ];
 
-  const route = useRouter();
-
-  const [searchData, setSerchData] = useState<string | null>(null);
-  const [filterOption, setFilterOption] = useState(filterOptionsList[0].value);
-  const [typeOption, setTypeOption] = useState(typeFilterOptionList[0].value);
-
-  const [visuOption, setCurrentOption] = useState(
-    visualizationOptionList[0].value
+  const [searchData, setSearchData] = useState<string | null>(
+    params.get("search") ?? null
   );
 
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [tempSearch, setTempSearch] = useState<string | null>(null);
+  const [filterOption, setFilterOption] = useState(
+    params.get("filterBy") ?? filterOptionsList[0].value
+  );
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [typeOption, setTypeOption] = useState(
+    params.get("type") ?? typeFilterOptionList[0].value
+  );
 
-  
+  const [visuOption, setCurrentOption] = useState(
+    params.get("isActive") ?? visualizationOptionList[0].value
+  );
 
-
- 
-  const searchParams = new URLSearchParams()
-  
-   if(visuOption !== "") searchParams.append("isActive",visuOption.toString())
-   if(typeOption !== "") searchParams.append("type",typeOption.toString())
-   if(filterOption) searchParams.append("filterBy",filterOption.toString())
-   if(searchData) searchParams.append("search",searchData.toString())
-
+  const [currentPage, setCurrentPage] = useState(params.get("page") ?? "1");
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: [searchData, typeOption, filterOption, visuOption],
+    queryKey: [visuOption, typeOption, filterOption, searchData, currentPage],
     queryFn: async () => {
       try {
+        updateParams();
 
-        const response = await fetch( `http://localhost:5000/dashboard/${searchParams}`, {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-         
-        });
-   
-        console.log(`http://localhost:5000/dashboard/${searchParams}`)
+        const response = await fetch(
+          `http://localhost:5000/dashboard/?${params}`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
         if (!response.ok) {
           if (response.status === 404) {
             throw error;
@@ -210,8 +205,7 @@ function Dashboard() {
           data: ImovelPreview[];
         } = await response.json();
 
-       
-
+        console.log(data);
         return data;
       } catch (err) {
         throw err;
@@ -219,11 +213,65 @@ function Dashboard() {
     },
   });
 
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [tempSearch, setTempSearch] = useState<string | null>(null);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const formCurrency = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
     minimumFractionDigits: 2,
   });
+
+  function updateParams() {
+    let resetPage = false;
+
+    // visuOption
+    if (visuOption === "") {
+      params.delete("isActive");
+    } else {
+      if (searchParams.get("isActive") !== visuOption) resetPage = true;
+      params.set("isActive", visuOption);
+    }
+
+    // typeOption
+    if (typeOption === "") {
+      params.delete("type");
+    } else {
+      if (searchParams.get("type") !== typeOption) resetPage = true;
+      params.set("type", typeOption);
+    }
+
+    // filterOption
+    if (filterOption === "") {
+      params.delete("filterBy");
+    } else {
+      if (searchParams.get("filterBy") !== filterOption) resetPage = true;
+      params.set("filterBy", filterOption);
+    }
+
+    // searchData
+    if (!searchData || searchData === "") {
+      params.delete("search");
+    } else {
+      if (searchParams.get("search") !== searchData) resetPage = true;
+      params.set("search", searchData);
+    }
+
+    // currentPage
+    if (!currentPage || currentPage === "") {
+      params.delete("page");
+    } else if (!resetPage) {
+      params.set("page", currentPage);
+    }
+
+    if (resetPage) {
+      params.set("page", "1");
+    }
+
+    router.push(`/user/dashboard/imoveis?${params.toString()}`);
+  }
 
   if (isLoading) {
     return (
@@ -245,19 +293,20 @@ function Dashboard() {
     );
   }
 
-  const page = parseInt(pageParams.page);
+  const page = parseInt(params.get("page") ?? "1") ;
   const perPage = 10;
 
   const start = (page - 1) * perPage + 1;
   const end = Math.min(page * perPage, data.pagination.totalCount);
 
+  const totalPages = Array.from({ length: data.pagination.pages });
   return (
-    <div>
+    <div className="w-full">
       {data.data ? (
-        <div className="flex items-start justify-center min-h-screen mask-linear-to-background">
-          <div className="w-2/3 my-5  rounded-md">
+        <div className="flex  items-start justify-center  mask-linear-to-background">
+          <div className="w-full   rounded-md">
             <div className=" my-4 flex justify-between  items-end gap-x-5">
-              <div className="flex w-full items-center gap-2  ">
+              <div className="flex w-full items-center   ">
                 <div className="w-1/2 flex items-center justify-center gap-x-2">
                   <Input
                     className="w-full"
@@ -277,7 +326,8 @@ function Dashboard() {
                     aria-label="clean search"
                     type="submit"
                     onClick={() => {
-                      setSerchData(tempSearch);
+                      updateParams();
+                      setSearchData(tempSearch);
                       setIsSearching(true);
                     }}
                   >
@@ -328,6 +378,7 @@ function Dashboard() {
                                       : currentValue
                                   );
 
+                                  updateParams();
                                   setTypeOption(currentValue);
                                   setOpenTypeFilter(false);
                                 }}
@@ -376,6 +427,7 @@ function Dashboard() {
                                 key={framework.value}
                                 value={framework.value}
                                 onSelect={(currentValue) => {
+                                  updateParams();
                                   console.log(currentValue);
                                   setFilterOption(
                                     currentValue === filterOption
@@ -438,6 +490,7 @@ function Dashboard() {
                                   key={framework.value}
                                   value={framework.value.toString()}
                                   onSelect={(currentValue) => {
+                                    updateParams();
                                     setCurrentOption(
                                       currentValue === "false"
                                         ? false
@@ -483,8 +536,9 @@ function Dashboard() {
                         className=" mt-2 cursor-pointer"
                         variant={"outline"}
                         onClick={() => {
-                          setSerchData("");
+                          setSearchData("");
                           setTempSearch(null);
+                          updateParams();
                           searchInputRef.current
                             ? (searchInputRef.current.value = "")
                             : null;
@@ -534,6 +588,7 @@ function Dashboard() {
                           <Badge
                             className="cursor-pointer"
                             onClick={() => {
+                              updateParams();
                               setTypeOption("");
                             }}
                           >
@@ -558,6 +613,7 @@ function Dashboard() {
                           <Badge
                             className="cursor-pointer"
                             onClick={() => {
+                              updateParams();
                               setFilterOption("");
                             }}
                           >
@@ -582,6 +638,7 @@ function Dashboard() {
                           <Badge
                             className="cursor-pointer"
                             onClick={() => {
+                              updateParams();
                               setCurrentOption(
                                 visualizationOptionList[0].value
                               );
@@ -744,32 +801,114 @@ function Dashboard() {
                 ) : null}
               </Table>
             )}
-            <div className="my-4">
-              {data.data.length === 0 ? null : (
-                <Pagination>
+            <div className="my-4 flex items-center flex-col">
+              <div className="text-sm my-4 text-muted-foreground">
+                Mostrando 10 anúncios por página - Página {page} de {totalPages.length}
+              </div>
+             <div>
+               {data.data.length === 0 ? null : (
+                <Pagination className="cursor-pointer">
                   <PaginationContent>
-                    {data &&
-                      Array.from({ length: data.pagination.pages }).map(
-                        (_, index) => {
-                          return (
-                            <PaginationItem key={index}>
+                    <PaginationItem
+                      onClick={() => {
+                        page - 1 === 0
+                          ? null
+                          : setCurrentPage(
+                              JSON.stringify(parseInt(currentPage) - 1)
+                            );
+                      }}
+                    >
+                      <PaginationPrevious href="#" />
+                    </PaginationItem>
+                    {page > 5 ? (
+                      <PaginationItem
+                        key={0}
+                        onClick={() => setCurrentPage(String(1))}
+                      >
+                        <PaginationLink
+                          isActive={1 === Number(params.get("page"))}
+                        >
+                          1 ...
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : null}
+                    {data.pagination.pages
+                      ? Array.from(
+                          { length: data.pagination.pages },
+                          (_, i) => i + 1
+                        )
+                          .slice(data.pagination.pages, page)
+                          .map((pageNumber) => (
+                            <PaginationItem
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(String(pageNumber))}
+                            >
                               <PaginationLink
                                 isActive={
-                                  parseInt(pageParams.page) - 1 === index
-                                    ? true
-                                    : false
+                                  pageNumber === Number(params.get("page"))
                                 }
-                                href={`/user/dashboard/page/${index + 1}`}
                               >
-                                {index + 1}{" "}
+                                {pageNumber}
                               </PaginationLink>
                             </PaginationItem>
-                          );
+                          ))
+                      : null}
+                    {data.pagination.pages
+                      ? Array.from(
+                          { length: data.pagination.pages },
+                          (_, i) => i + 1
+                        )
+                          .slice(
+                            (page > 5 ? page - 5 : 0),
+                            (page > 5 ? page + 5 : 9)
+                          )
+                          .map((pageNumber) => (
+                            <PaginationItem
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(String(pageNumber))}
+                            >
+                              <PaginationLink
+                                isActive={
+                                  pageNumber === Number(params.get("page"))
+                                }
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))
+                      : null}
+
+                    {page + 5 < (totalPages.length) ? (
+                      <PaginationItem
+                        key={data.pagination.pages} 
+                        onClick={() =>
+                          setCurrentPage(String(data.pagination.pages))
                         }
-                      )}
+                      >
+                        <PaginationLink
+                          isActive={
+                            data.pagination.pages === Number(params.get("page"))
+                          }
+                        >
+                          ... {data.pagination.pages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : null}
+                    <PaginationItem
+                      onClick={() => {
+                        page + 1 > data.pagination.pages
+                          ? null
+                          : setCurrentPage(
+                              JSON.stringify(parseInt(currentPage) + 1)
+                            );
+                      }}
+                    >
+                      <PaginationNext />
+                    </PaginationItem>
                   </PaginationContent>
                 </Pagination>
               )}
+             </div>
             </div>
           </div>
         </div>
