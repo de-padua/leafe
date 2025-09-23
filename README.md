@@ -1,6 +1,5 @@
 
-![Alt text]((https://raw.githubusercontent.com/toniswx/leafe/41be72c73970fd74f24fd43b2465f596ff0e26c9/frontend/public/logo.svg
-)) 
+![Alt text](https://raw.githubusercontent.com/toniswx/leafe/41be72c73970fd74f24fd43b2465f596ff0e26c9/frontend/public/logo.svg)
 > A full‑stack TypeScript app with backend, frontend, and messaging via RabbitMQ, containerized with Docker.
 
 ## Table of Contents
