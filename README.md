@@ -1,6 +1,8 @@
 
 ![Alt text](https://raw.githubusercontent.com/toniswx/leafe/41be72c73970fd74f24fd43b2465f596ff0e26c9/frontend/public/logo.svg)
-> A full‑stack TypeScript app with backend, frontend, and messaging via RabbitMQ, containerized with Docker.
+**Leafe** is a real estate platform where users can **buy and sell houses, land, apartments, or any type of property you can live on**.  
+The project aims to provide a modern and reliable way to connect buyers and sellers in the real estate market, with features like property listings, image uploads, authentication.
+The app does not provide any form of transaction, aiming to let it to the users to negotiate in their way.
 
 ## Table of Contents
 
