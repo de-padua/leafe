@@ -10,9 +10,8 @@ The app does not provide any form of transaction, aiming to let it to the users 
 
 
 IF YOU WANT TO SEE DETAILS IN EACH AREA
-
-> [FRONT END DETAILS](https://github.com/toniswx/leafe/tree/main/frontend)
-> [BACK END DETAILS](https://github.com/toniswx/leafe/tree/main/backend)
+- [FRONT END DETAILS](https://github.com/toniswx/leafe/tree/main/frontend)
+- [BACK END DETAILS](https://github.com/toniswx/leafe/tree/main/backend)
 
 
 
