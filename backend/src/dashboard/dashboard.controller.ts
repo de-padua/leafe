@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpStatus,
+  Param,
   Post,
   Query,
   Req,
@@ -13,32 +14,60 @@ import { Response } from 'express';
 import { AuthGuard, CustomRequestWithId } from 'src/auth/auth.guard';
 import { DashboardService } from './dashboard.service';
 import DashboardQuery from './dto/DashboardQuery';
+import { UUID } from 'crypto';
+import { queryObjects } from 'v8';
 
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
   @UseGuards(AuthGuard)
-  @Post()
+  @Get()
   async GetUserDataDashboard(
+    @Query('filterBy') filterBy: string,
+    @Query('type') type: 'AP' | 'HOUSE' | 'LAND' | undefined,
+    @Query('isActive') isActive: string,
+    @Query('search') search: string | UUID | undefined,
+    @Query('page') page: string,
+
     @Req() request: CustomRequestWithId,
     @Body()
-    body: {
-      type: 'AP' | 'HOUSE' | "LAND" | null;
-      filterBy: string | null;
-      search: string | null;
-      pageOffset:number
-      isActive:boolean | null
-    },
-    @Res({ passthrough: true }) response: Response,
+    @Res({ passthrough: true })
+    response: Response,
   ) {
     if (!request.id) return response.status(HttpStatus.UNAUTHORIZED);
 
-    const {type,filterBy,search,pageOffset,isActive} = body
     const userId = request.id;
- 
-    
 
-    const dashboardData = await this.dashboardService.getDashboardData(userId,type,filterBy,search,pageOffset,isActive);
+    const dashboardData = await this.dashboardService.getDashboardData(
+      userId,
+      type,
+      filterBy,
+      search,
+      page,
+      isActive,
+    );
     return dashboardData;
+  }
+
+  @UseGuards(AuthGuard)
+  @Post()
+  async GetPostById(
+    @Req() request: CustomRequestWithId,
+    @Body()
+    data: {
+      postId: string;
+    },
+    @Res({ passthrough: true })
+    response: Response,
+  ) {
+    if (!request.id) return response.status(HttpStatus.UNAUTHORIZED);
+
+    const userId = request.id;
+
+    const postData = await this.dashboardService.getDashboardPostData(
+      data.postId,
+      userId,
+    );
+    return postData;
   }
 }

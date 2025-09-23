@@ -15,13 +15,27 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
 import { AnuncioController } from './anuncio/anuncio.controller';
 import { AnuncioService } from './anuncio/anuncio.service';
-
 import { DashboardController } from './dashboard/dashboard.controller';
 import { DashboardService } from './dashboard/dashboard.service';
+import {Transport,ClientsModule} from "@nestjs/microservices"
 
 const isProd = false;
+
 @Module({
   imports: [
+    ClientsModule.register([
+      {
+        name: 'rabbitmq',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://user:password@rabbitmq:5672'],
+          queue: 'photo_service',
+          queueOptions: {
+            durable: false
+          },
+        },
+      },
+    ]),
     MailerModule.forRoot({
       transport: {
         host: 'smtp.ethereal.email',

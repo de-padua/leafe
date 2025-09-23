@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import {
+  IconActivity,
   IconCamera,
   IconChartBar,
   IconDashboard,
   IconDatabase,
   IconEngineFilled,
+  IconExclamationCircle,
   IconFileAi,
   IconFileDescription,
   IconFileWord,
@@ -34,25 +36,21 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Logo from "./custom/logo";
+import { GearIcon } from "@radix-ui/react-icons";
+import { Menu, Shield, UserIcon } from "lucide-react";
 
 const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/user/dashboard/imoveis?page=1",
-      icon: IconDashboard,
+      url: "/user/dashboard/imoveis/list/q?page=1",
+      icon: IconActivity,
     },
     {
       title: "Análise e métricas",
-      url: "#",
+      url: "/user/dashboard/metrics/t?page=1",
       icon: IconChartBar,
     },
-    {
-      title: "Configurações",
-      url: "#",
-      icon: IconEngineFilled,
-    },
-   
   ],
   navClouds: [
     {
@@ -104,36 +102,36 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Settings",
+      title: "Segurança",
       url: "#",
-      icon: IconSettings,
+      icon: IconExclamationCircle,
     },
     {
-      title: "Get Help",
+      title: "Ajuda ",
       url: "#",
       icon: IconHelp,
     },
     {
-      title: "Search",
+      title: "Pesquisar",
       url: "#",
       icon: IconSearch,
     },
   ],
   documents: [
     {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
+      name: "Perfil",
+      url: "/user/settings/profile",
+      icon: UserIcon,
     },
     {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
+      name: "Segurança",
+      url: "/user/settings/security",
+      icon: Shield,
     },
     {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
+      name: "Detalhes da conta",
+      url: "/user/settings/detail",
+      icon: Menu,
     },
   ],
 };
@@ -141,10 +139,12 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      
       <SidebarContent>
         <NavMain items={data.navMain} />
+        
+
         <NavDocuments items={data.documents} />
+        <NavSecondary items={data.navSecondary} />
       </SidebarContent>
     </Sidebar>
   );

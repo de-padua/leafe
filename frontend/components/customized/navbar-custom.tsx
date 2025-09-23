@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Logo from "../custom/logo";
-import { Loader2, Plus, User } from "lucide-react";
+import { Loader2, Plus, PlusCircle, PlusCircleIcon, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import UserMenu from "../navbar-components/user-menu";
@@ -34,6 +34,7 @@ import { Label } from "@/components/ui/label";
 import { useEffect, useId } from "react";
 import { useUserStore } from "@/lib/stores/currentUserStore";
 import Link from "next/link";
+import { IconCirclePlusFilled } from "@tabler/icons-react";
 
 const navigationLinks = [
   { href: "/home", label: "Home", active: true },
@@ -42,8 +43,6 @@ const navigationLinks = [
 
 export default function CustomNavBar() {
   const userData = useUserStore((state) => state.currentUser);
-
-
 
   if (userData === null)
     return (
@@ -173,12 +172,17 @@ export default function CustomNavBar() {
             </NavigationMenu>
           </div>
         </div>
-        <div className="flex items-center justify-between  rounded-md border py-1  px-3 gap-x-4">
+        <div className="flex items-center justify-between  rounded-md  py-1  px-3 gap-x-4">
           <Link href={"/anuncio/novo"}>
-          <Button>Novo anúncio <Plus /> </Button>
+            <Button size={"sm"} className="  text-sm">
+              {" "}
+              <IconCirclePlusFilled /> Novo anúncio{" "}
+            </Button>
           </Link>
-          <NotificationMenu />
+          <div className="flex items-center justify-between  rounded-md border py-1  px-3 gap-x-2">
+             <NotificationMenu />
           <UserMenu userdata={userData} />
+          </div>
         </div>
       </div>
     </header>

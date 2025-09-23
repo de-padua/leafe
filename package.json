@@ -1,0 +1,26 @@
+{
+  "name": "leafe",
+  "version": "1.0.0",
+  "description": "Basic .env structure file for backend/docker-compose",
+  "homepage": "https://github.com/toniswx/leafe#readme",
+  "bugs": {
+    "url": "https://github.com/toniswx/leafe/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/toniswx/leafe.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cd backend && npm run dev ",
+    "migrate": "cd backend && npm run migrate",
+    "generate": "cd backend && npm run generate"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

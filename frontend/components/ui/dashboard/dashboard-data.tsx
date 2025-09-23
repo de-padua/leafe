@@ -34,7 +34,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Cross1Icon, DotsHorizontalIcon } from "@radix-ui/react-icons";
+import {
+  Cross1Icon,
+  DotsHorizontalIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon,
+} from "@radix-ui/react-icons";
 import {
   AlertCircle,
   Archive,
@@ -270,7 +275,7 @@ function Dashboard() {
       params.set("page", "1");
     }
 
-    router.push(`/user/dashboard/imoveis?${params.toString()}`);
+    router.push(`/user/dashboard/imoveis/list/data?${params.toString()}`);
   }
 
   if (isLoading) {
@@ -293,7 +298,7 @@ function Dashboard() {
     );
   }
 
-  const page = parseInt(params.get("page") ?? "1") ;
+  const page = parseInt(params.get("page") ?? "1");
   const perPage = 10;
 
   const start = (page - 1) * perPage + 1;
@@ -723,7 +728,9 @@ function Dashboard() {
                   {data?.data.map((post: ImovelPreview) => (
                     <TableRow
                       key={post.id}
-                      onClick={() => {}}
+                      onClick={() => {
+                        router.push(`/user/dashboard/imoveis/view/${post.id}`);
+                      }}
                       className=" odd:bg-muted/50"
                     >
                       <TableCell className=" ">{post.title}</TableCell>
@@ -801,114 +808,122 @@ function Dashboard() {
                 ) : null}
               </Table>
             )}
-            <div className="my-4 flex items-center flex-col">
+            <div className="my-4 flex items-center justify-between w-full ">
               <div className="text-sm my-4 text-muted-foreground">
-                Mostrando 10 anúncios por página - Página {page} de {totalPages.length}
+                Mostrando 10 anúncios por página - Página {page} de{" "}
+                {totalPages.length}
               </div>
-             <div>
-               {data.data.length === 0 ? null : (
-                <Pagination className="cursor-pointer">
-                  <PaginationContent>
-                    <PaginationItem
-                      onClick={() => {
-                        page - 1 === 0
-                          ? null
-                          : setCurrentPage(
-                              JSON.stringify(parseInt(currentPage) - 1)
-                            );
-                      }}
-                    >
-                      <PaginationPrevious href="#" />
-                    </PaginationItem>
-                    {page > 5 ? (
-                      <PaginationItem
-                        key={0}
-                        onClick={() => setCurrentPage(String(1))}
-                      >
-                        <PaginationLink
-                          isActive={1 === Number(params.get("page"))}
+              <div>
+                <div>
+                  {data.data.length === 0 ? null : (
+                    <Pagination className="cursor-pointer">
+                      <PaginationContent>
+                        <PaginationItem
+                          onClick={() => {
+                            page - 1 === 0
+                              ? null
+                              : setCurrentPage(
+                                  JSON.stringify(parseInt(currentPage) - 1)
+                                );
+                          }}
                         >
-                          1 ...
-                        </PaginationLink>
-                      </PaginationItem>
-                    ) : null}
-                    {data.pagination.pages
-                      ? Array.from(
-                          { length: data.pagination.pages },
-                          (_, i) => i + 1
-                        )
-                          .slice(data.pagination.pages, page)
-                          .map((pageNumber) => (
-                            <PaginationItem
-                              key={pageNumber}
-                              onClick={() => setCurrentPage(String(pageNumber))}
+                          <PaginationPrevious href="#" />
+                        </PaginationItem>
+                        {page > 5 ? (
+                          <PaginationItem
+                            key={0}
+                            onClick={() => setCurrentPage(String(1))}
+                          >
+                            <PaginationLink
+                              isActive={1 === Number(params.get("page"))}
                             >
-                              <PaginationLink
-                                isActive={
-                                  pageNumber === Number(params.get("page"))
-                                }
-                              >
-                                {pageNumber}
-                              </PaginationLink>
-                            </PaginationItem>
-                          ))
-                      : null}
-                    {data.pagination.pages
-                      ? Array.from(
-                          { length: data.pagination.pages },
-                          (_, i) => i + 1
-                        )
-                          .slice(
-                            (page > 5 ? page - 5 : 0),
-                            (page > 5 ? page + 5 : 9)
-                          )
-                          .map((pageNumber) => (
-                            <PaginationItem
-                              key={pageNumber}
-                              onClick={() => setCurrentPage(String(pageNumber))}
-                            >
-                              <PaginationLink
-                                isActive={
-                                  pageNumber === Number(params.get("page"))
-                                }
-                              >
-                                {pageNumber}
-                              </PaginationLink>
-                            </PaginationItem>
-                          ))
-                      : null}
+                              1 ...
+                            </PaginationLink>
+                          </PaginationItem>
+                        ) : null}
+                        {data.pagination.pages
+                          ? Array.from(
+                              { length: data.pagination.pages },
+                              (_, i) => i + 1
+                            )
+                              .slice(data.pagination.pages, page)
+                              .map((pageNumber) => (
+                                <PaginationItem
+                                  key={pageNumber}
+                                  onClick={() =>
+                                    setCurrentPage(String(pageNumber))
+                                  }
+                                >
+                                  <PaginationLink
+                                    isActive={
+                                      pageNumber === Number(params.get("page"))
+                                    }
+                                  >
+                                    {pageNumber}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              ))
+                          : null}
+                        {data.pagination.pages
+                          ? Array.from(
+                              { length: data.pagination.pages },
+                              (_, i) => i + 1
+                            )
+                              .slice(
+                                page > 5 ? page - 5 : 0,
+                                page > 5 ? page + 5 : 9
+                              )
+                              .map((pageNumber) => (
+                                <PaginationItem
+                                  key={pageNumber}
+                                  onClick={() =>
+                                    setCurrentPage(String(pageNumber))
+                                  }
+                                >
+                                  <PaginationLink
+                                    isActive={
+                                      pageNumber === Number(params.get("page"))
+                                    }
+                                  >
+                                    {pageNumber}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              ))
+                          : null}
 
-                    {page + 5 < (totalPages.length) ? (
-                      <PaginationItem
-                        key={data.pagination.pages} 
-                        onClick={() =>
-                          setCurrentPage(String(data.pagination.pages))
-                        }
-                      >
-                        <PaginationLink
-                          isActive={
-                            data.pagination.pages === Number(params.get("page"))
-                          }
+                        {page + 5 < totalPages.length ? (
+                          <PaginationItem
+                            key={data.pagination.pages}
+                            onClick={() =>
+                              setCurrentPage(String(data.pagination.pages))
+                            }
+                          >
+                            <PaginationLink
+                              isActive={
+                                data.pagination.pages ===
+                                Number(params.get("page"))
+                              }
+                            >
+                              ... {data.pagination.pages}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ) : null}
+                        <PaginationItem
+                          onClick={() => {
+                            page + 1 > data.pagination.pages
+                              ? null
+                              : setCurrentPage(
+                                  JSON.stringify(parseInt(currentPage) + 1)
+                                );
+                          }}
                         >
-                          ... {data.pagination.pages}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ) : null}
-                    <PaginationItem
-                      onClick={() => {
-                        page + 1 > data.pagination.pages
-                          ? null
-                          : setCurrentPage(
-                              JSON.stringify(parseInt(currentPage) + 1)
-                            );
-                      }}
-                    >
-                      <PaginationNext />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
-             </div>
+                          <PaginationNext />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1360,3 +1375,108 @@ function SearchPageSkeleton() {
     </div>
   );
 }
+
+/** <div>
+               {data.data.length === 0 ? null : (
+                <Pagination className="cursor-pointer">
+                  <PaginationContent>
+                    <PaginationItem
+                      onClick={() => {
+                        page - 1 === 0
+                          ? null
+                          : setCurrentPage(
+                              JSON.stringify(parseInt(currentPage) - 1)
+                            );
+                      }}
+                    >
+                      <PaginationPrevious href="#" />
+                    </PaginationItem>
+                    {page > 5 ? (
+                      <PaginationItem
+                        key={0}
+                        onClick={() => setCurrentPage(String(1))}
+                      >
+                        <PaginationLink
+                          isActive={1 === Number(params.get("page"))}
+                        >
+                          1 ...
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : null}
+                    {data.pagination.pages
+                      ? Array.from(
+                          { length: data.pagination.pages },
+                          (_, i) => i + 1
+                        )
+                          .slice(data.pagination.pages, page)
+                          .map((pageNumber) => (
+                            <PaginationItem
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(String(pageNumber))}
+                            >
+                              <PaginationLink
+                                isActive={
+                                  pageNumber === Number(params.get("page"))
+                                }
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))
+                      : null}
+                    {data.pagination.pages
+                      ? Array.from(
+                          { length: data.pagination.pages },
+                          (_, i) => i + 1
+                        )
+                          .slice(
+                            (page > 5 ? page - 5 : 0),
+                            (page > 5 ? page + 5 : 9)
+                          )
+                          .map((pageNumber) => (
+                            <PaginationItem
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(String(pageNumber))}
+                            >
+                              <PaginationLink
+                                isActive={
+                                  pageNumber === Number(params.get("page"))
+                                }
+                              >
+                                {pageNumber}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))
+                      : null}
+
+                    {page + 5 < (totalPages.length) ? (
+                      <PaginationItem
+                        key={data.pagination.pages} 
+                        onClick={() =>
+                          setCurrentPage(String(data.pagination.pages))
+                        }
+                      >
+                        <PaginationLink
+                          isActive={
+                            data.pagination.pages === Number(params.get("page"))
+                          }
+                        >
+                          ... {data.pagination.pages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ) : null}
+                    <PaginationItem
+                      onClick={() => {
+                        page + 1 > data.pagination.pages
+                          ? null
+                          : setCurrentPage(
+                              JSON.stringify(parseInt(currentPage) + 1)
+                            );
+                      }}
+                    >
+                      <PaginationNext />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+             </div> */

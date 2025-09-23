@@ -19,6 +19,7 @@ import { randomUUID } from 'crypto';
 import { PrismaService } from 'src/prisma.service';
 import { AuthGuard, CustomRequestWithId } from 'src/auth/auth.guard';
 import { AnuncioService } from './anuncio.service';
+import { throws } from 'assert';
 
 @Controller('anuncio')
 export class AnuncioController {
@@ -30,25 +31,25 @@ export class AnuncioController {
     @Body() body: CreatePropertyDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    try{
+    try {
       if (!request.id) return HttpStatus.UNAUTHORIZED;
 
-    const userId = request.id;
+      const userId = request.id;
 
-    const data = await this.anuncioService.createAd(body, body.postId, userId);
+      const data = await this.anuncioService.createAd(
+        body,
+        body.postId,
+        userId,
+      );
 
-    return {
-      success: true,
-      data: data,
-    };
-    }
-    catch(err){
-      throw err
+      return {
+        success: true,
+        data: data,
+      };
+    } catch (err) {
+      throw err;
     }
   }
-
-
-  
 
   @Post('pictures')
   @UseGuards(AuthGuard)
@@ -63,10 +64,14 @@ export class AnuncioController {
       const postId = Array.isArray(body.id) ? body.id[0] : body.id;
       const data = await this.anuncioService.uploadImages(files, postId);
       return {
-        success: data.success,
+        success: true,
       };
     } catch (err) {
       throw err;
     }
+  }
+  @Post('teste')
+  async teste() {
+    return "ok"
   }
 }
