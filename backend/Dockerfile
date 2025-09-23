@@ -1,12 +1,11 @@
-# syntax=docker/dockerfile:1
+FROM node:22-slim
 
-ARG NODE_VERSION=22.14.0
-FROM node:${NODE_VERSION}-alpine
-
-ENV NODE_ENV development
-
-# Use root user until all dependencies are installed
+ENV NODE_ENV=development
 WORKDIR /usr/src/app
+
+# Instala OpenSSL
+RUN apt-get update -y && apt-get install -y openssl libssl-dev procps \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm ci --quiet
@@ -14,8 +13,6 @@ RUN npm ci --quiet
 COPY ./prisma prisma
 COPY . .
 
-# Now switch to node user AFTER everything is set up
 USER node
-
 EXPOSE 8000
 CMD ["npm", "run", "dev"]

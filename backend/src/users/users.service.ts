@@ -15,6 +15,11 @@ import { Request } from 'express';
 import { updateUserPasswordDto } from './dto/update-password-dto';
 import { JwtService } from '@nestjs/jwt';
 
+enum PropertyType {
+  ap,
+  house,
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -165,19 +170,18 @@ export class UsersService {
   };
 
   createCodes = async (userId: string) => {
-
-     await this.prisma.recoveryCodes.deleteMany({
-      where:{
-         userId:userId
-      }
-    })
+    await this.prisma.recoveryCodes.deleteMany({
+      where: {
+        userId: userId,
+      },
+    });
     const quantityOfCodes = 10;
     const codes: recoveryCodes[] = [];
 
     for (let index = 0; index < quantityOfCodes; index++) {
       codes.push({
         id: randomUUID(),
-        code: randomUUID().substring(0,8),
+        code: randomUUID().substring(0, 8),
         userId: userId,
         isUsed: false,
       });
@@ -208,8 +212,7 @@ export class UsersService {
     const newAccessToken =
       await this.authService.createAccessTokenJwt(updatedProfile);
 
-
-    updatedProfile["codes"] = codes
+    updatedProfile['codes'] = codes;
     return {
       newData: updatedProfile,
       newAccessToken: newAccessToken,
@@ -226,5 +229,39 @@ export class UsersService {
     if (!userCodes) throw new NotFoundException('Códigos não gerados');
 
     return userCodes;
+  };
+
+  getProfileUserData = async (
+    userId: string | undefined,
+    pageOffset: string | undefined,
+    sort: string | undefined,
+    category: 'AP' | 'HOUSE' | null,
+    limit: string | undefined,
+    price: string | undefined,
+  ) => {
+    const orderBy: {}[] = [];
+
+    if (sort) {
+      orderBy.push({ postedAt: sort });
+    }
+
+    if (price) {
+      orderBy.push({ price: price });
+    }
+    const data = await this.prisma.imovel.findMany({
+      where: {
+        userId,
+        type: category ? category : undefined,
+      },
+      skip: pageOffset ? parseInt(pageOffset) : parseInt('0'),
+      take:  10,
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      include: {
+        imovelImages: true,
+      },
+    });
+
+    console.log(data);
+    return data;
   };
 }

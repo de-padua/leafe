@@ -13,18 +13,37 @@ import { EmailController } from './email/email.controller';
 import { EmailService } from './email/email.service';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { join } from 'path';
+import { AnuncioController } from './anuncio/anuncio.controller';
+import { AnuncioService } from './anuncio/anuncio.service';
+import { DashboardController } from './dashboard/dashboard.controller';
+import { DashboardService } from './dashboard/dashboard.service';
+import {Transport,ClientsModule} from "@nestjs/microservices"
 
 const isProd = false;
+
 @Module({
   imports: [
+    ClientsModule.register([
+      {
+        name: 'rabbitmq',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://user:password@rabbitmq:5672'],
+          queue: 'photo_service',
+          queueOptions: {
+            durable: false
+          },
+        },
+      },
+    ]),
     MailerModule.forRoot({
       transport: {
-        host: 'smtp.ethereal.email', // Your SMTP host
+        host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
-       auth: {
-        user: 'quincy17@ethereal.email',
-        pass: 'yCky7HtDJnE2SHwRM7'
+      auth: {
+        user: 'lydia.walter58@ethereal.email',
+        pass: 'HPfdT3XfE9WTrBvx2t'
     },
       },
       defaults: {
@@ -32,9 +51,9 @@ const isProd = false;
       },
       template: {
         dir: isProd
-          ? join(__dirname, 'email', 'templates') // produção: dist/email/templates
-          : join(__dirname, '..', 'src', 'email', 'templates'), // dev: src/email/templates
-        adapter: new HandlebarsAdapter(), // ou EjsAdapter se usar ejs
+          ? join(__dirname, 'email', 'templates') 
+          : join(__dirname, '..', 'src', 'email', 'templates'), 
+        adapter: new HandlebarsAdapter(), 
         options: {
           strict: true,
         },
@@ -42,11 +61,11 @@ const isProd = false;
     }),
     CacheModule.register({ isGlobal: true }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET, // Use environment variable
+      secret: process.env.JWT_SECRET, 
     }),
   ],
-  controllers: [UsersController, AuthController, EmailController],
-  providers: [PrismaService, UsersService, AuthService, EmailService],
+  controllers: [UsersController, AuthController, EmailController, AnuncioController,DashboardController],
+  providers: [PrismaService, UsersService, AuthService, EmailService, AnuncioService, DashboardService],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {}

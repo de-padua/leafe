@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Logo from "../custom/logo";
-import { Loader2, User } from "lucide-react";
+import { Loader2, Plus, PlusCircle, PlusCircleIcon, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import UserMenu from "../navbar-components/user-menu";
@@ -31,31 +31,110 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useId } from "react";
+import { useEffect, useId } from "react";
 import { useUserStore } from "@/lib/stores/currentUserStore";
-// Navigation links array to be used in both desktop and mobile menus
-const navigationLinks = [{ href: "/home", label: "Home", active: true }];
+import Link from "next/link";
+import { IconCirclePlusFilled } from "@tabler/icons-react";
+
+const navigationLinks = [
+  { href: "/home", label: "Home", active: true },
+  { href: "/home", label: "Anúncios", active: true },
+];
 
 export default function CustomNavBar() {
-  
   const userData = useUserStore((state) => state.currentUser);
-  const setNull = useUserStore((state) => state.setNull);
 
-  const isLoadingUserData = useUserStore((state) => state.isLoading);
+  if (userData === null)
+    return (
+      <header className="border-b px-4 md:px-6">
+        <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverContent align="start" className="w-36 p-1 md:hidden">
+                <NavigationMenu className="max-w-none *:w-full">
+                  <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
+                    {navigationLinks.map((link, index) => (
+                      <NavigationMenuItem key={index} className="w-full">
+                        <NavigationMenuLink
+                          href={link.href}
+                          className="py-1.5"
+                          active={link.active}
+                        >
+                          {link.label}
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    ))}
+                  </NavigationMenuList>
+                </NavigationMenu>
+              </PopoverContent>
+            </Popover>
 
-  if (userData === "NOT FOUND") {
-    setNull(null);
+            <div className="flex items-center gap-6">
+              <Logo />
 
-    return <></>;
-  }
+              <NavigationMenu className="max-md:hidden">
+                <NavigationMenuList className="gap-2">
+                  {navigationLinks.map((link, index) => (
+                    <NavigationMenuItem key={index}>
+                      <NavigationMenuLink
+                        active={link.active}
+                        href={link.href}
+                        className="text-muted-foreground hover:text-primary py-1.5 font-medium"
+                      >
+                        {link.label}
+                      </NavigationMenuLink>
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between  rounded-md border py-1  px-3 gap-x-4">
+            <div className="space-x-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Entrar</Button>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <div className="flex flex-col items-center gap-2">
+                    <div
+                      className="flex size-31 shrink-0 items-center justify-center rounded-full border"
+                      aria-hidden="true"
+                    >
+                      <Logo />
+                    </div>
+
+                    <DialogHeader>
+                      <DialogTitle className="sm:text-center">
+                        Bem vindo de volta
+                      </DialogTitle>
+
+                      <DialogDescription className="sm:text-center">
+                        Use suas credenciais para acessar sua conta.
+                      </DialogDescription>
+                    </DialogHeader>
+                  </div>
+
+                  <LoginForm />
+                </DialogContent>
+              </Dialog>
+
+              <Button asChild size={"sm"} className="" variant={"default"}>
+                <a href="/singup"> Criar conta</a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
 
   return (
     <header className="border-b px-4 md:px-6">
       <div className="flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-       
           <Popover>
-       
             <PopoverContent align="start" className="w-36 p-1 md:hidden">
               <NavigationMenu className="max-w-none *:w-full">
                 <NavigationMenuList className="flex-col items-start gap-0 md:gap-2">
@@ -75,7 +154,7 @@ export default function CustomNavBar() {
             </PopoverContent>
           </Popover>
           <div className="flex items-center gap-6">
-           <Logo  />
+            <Logo />
             <NavigationMenu className="max-md:hidden">
               <NavigationMenuList className="gap-2">
                 {navigationLinks.map((link, index) => (
@@ -93,43 +172,17 @@ export default function CustomNavBar() {
             </NavigationMenu>
           </div>
         </div>
-        <div className="flex items-center justify-between  rounded-md border py-1  px-3 gap-x-4">
-          {userData?.id ? <NotificationMenu /> : null}
-          {userData?.id ? (
-            <UserMenu userdata={userData} />
-          ) : (
-            <div className="space-x-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">Entrar</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <div className="flex flex-col items-center gap-2">
-                    <div
-                      className="flex size-31 shrink-0 items-center justify-center rounded-full border"
-                      aria-hidden="true"
-                    >
-                      <Logo />
-                    </div>
-                    <DialogHeader>
-                      <DialogTitle className="sm:text-center">
-                        Bem vindo de volta
-                      </DialogTitle>
-                      <DialogDescription className="sm:text-center">
-                        Use suas credenciais para acessar sua conta.
-                      </DialogDescription>
-                    </DialogHeader>
-                  </div>
-
-                  <LoginForm />
-                </DialogContent>
-              </Dialog>
-
-              <Button asChild size={"sm"} className="" variant={"default"}>
-                <a href="/singup"> Criar conta</a>
-              </Button>
-            </div>
-          )}
+        <div className="flex items-center justify-between  rounded-md  py-1  px-3 gap-x-4">
+          <Link href={"/anuncio/novo"}>
+            <Button size={"sm"} className="  text-sm">
+              {" "}
+              <IconCirclePlusFilled /> Novo anúncio{" "}
+            </Button>
+          </Link>
+          <div className="flex items-center justify-between  rounded-md border py-1  px-3 gap-x-2">
+             <NotificationMenu />
+          <UserMenu userdata={userData} />
+          </div>
         </div>
       </div>
     </header>

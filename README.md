@@ -23,3 +23,4 @@ JWT_ADM_SECRET=YOUR-JWT-SECRET
 
 JWT_VERIFY_CODE=YOUR-JWT-SECRET
 ``` 
+/*npm i && npm run generate && npx prisma migrate dev --name init && */

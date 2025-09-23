@@ -67,6 +67,9 @@ function LoginForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     mutation.mutate(values);
   }
+
+
+
   return (
     <div>
       <Form {...form}>
@@ -78,7 +81,7 @@ function LoginForm() {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="" {...field} />
+                  <Input {...field}  ref={field.ref} placeholder=""  />
                 </FormControl>
 
                 <FormMessage />
@@ -97,7 +100,7 @@ function LoginForm() {
                   </Button>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="" {...field} type="password" />
+                  <Input {...field} placeholder="" type="password"  ref={field.ref} />
                 </FormControl>
 
                 <FormMessage />

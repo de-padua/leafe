@@ -1,0 +1,84 @@
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: leafe-rabbitmq
+    ports:
+      - "5672:5672"   
+      - "15672:15672"    
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    networks:
+      - backend-network
+  rabbitmq_service:
+   container_name: rabbitmq-service
+   build:
+    context: ./rabbitmq  
+    dockerfile: Dockerfile         
+   ports:
+    - "5001:5000"        
+   env_file: .env  
+   environment:
+    NODE_ENV: development
+    RABBITMQ_USER: user
+    RABBITMQ_PASS: password
+   volumes:
+    - ./rabbitmq:/usr/src/app
+   networks:
+    - backend-network
+   depends_on:
+    - rabbitmq
+ 
+  server_dev:
+    container_name: nest-server
+    user: 'root'
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file: .env  
+    environment:
+      - NODE_ENV=development
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./:/usr/src/app
+    networks:
+      - backend-network
+    depends_on:
+      - db
+      - redis
+  db:
+    image: bitnami/postgresql:latest
+    container_name: postgresql-nest-server
+    restart: always
+    env_file: ./.env
+    user: 'root'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?err}
+      - POSTGRES_DB=${POSTGRES_DB:?err}
+      - POSTGRESQL_REPLICATION_USE_PASSFILE=no
+      - BITNAMI_DEBUG=true
+      - PG_DATA_DIR=/bitnami/postgresql/data
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/bitnami/postgresql/data
+    networks:
+      - backend-network
+  redis:
+    image: redis:7.4-rc2-alpine
+    ports:
+      - '9999:9999'
+    networks:
+      - backend-network
+
+volumes:
+  postgres_data:
+    driver: local
+    name: nest-driver
+
+networks:
+  backend-network:
+    driver: bridge

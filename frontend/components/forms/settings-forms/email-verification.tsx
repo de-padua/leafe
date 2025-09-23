@@ -24,6 +24,10 @@ import { toast } from "sonner";
 import url from "@/api";
 
 function EmailVerification({ userData }: { userData: User }) {
+
+
+  userData.metadata.emailVerified = false
+  
   const id = useId();
 
   const [isLoading, setLoading] = useState(false);

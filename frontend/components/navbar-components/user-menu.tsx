@@ -4,6 +4,7 @@ import {
   BookOpenIcon,
   Layers2Icon,
   LogOutIcon,
+  PanelsTopLeft,
   PinIcon,
   Plus,
   PlusCircle,
@@ -27,6 +28,7 @@ import { User } from "@/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ExitIcon } from "@radix-ui/react-icons";
 import { useUserStore } from "@/lib/stores/currentUserStore";
+import { data } from "../custom/estate-filter";
 
 export default function UserMenu(props: { userdata: User }) {
   const queryClient = useQueryClient();
@@ -53,7 +55,6 @@ export default function UserMenu(props: { userdata: User }) {
     mutationFn: logout,
     onSuccess: (data) => {
       console.log("logout successful:", data);
-      setNull(null);
       queryClient.invalidateQueries();
       queryClient.clear();
     },
@@ -91,24 +92,37 @@ export default function UserMenu(props: { userdata: User }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <a href={`/user/profile/${props.userdata.id}`}>
+          <a href={`/public/profile/v1?userId=${props.userdata.id}`}>
             <DropdownMenuItem>
               <User2 size={16} className="opacity-60" aria-hidden="true" />
               <span> Meu perfil</span>
             </DropdownMenuItem>{" "}
           </a>
-          <a href={`/user/settings`}>
+          <a href={`/user/settings/profile`}>
             <DropdownMenuItem>
               <Wrench size={16} className="opacity-60" aria-hidden="true" />
               <span> Configurações de conta</span>
             </DropdownMenuItem>{" "}
           </a>
           <DropdownMenuSeparator />
+          <a href={`/user/dashboard/imoveis/list/data?page=1`}>
+            <DropdownMenuItem>
+              <PanelsTopLeft
+                size={16}
+                className="opacity-60"
+                aria-hidden="true"
+              />
+              <span> Dashboard</span>
+            </DropdownMenuItem>{" "}
+          </a>
 
-          <DropdownMenuItem>
-            <PlusCircle size={16} className="opacity-60" aria-hidden="true" />
-            <span> Novo anúncio</span>
-          </DropdownMenuItem>
+          <a href={`/anuncio/novo`}>
+            <DropdownMenuItem>
+              <PlusCircle size={16} className="opacity-60" aria-hidden="true" />
+              <span> Novo anúncio</span>
+            </DropdownMenuItem>
+          </a>
+
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => mutation.mutate()}>
             <ExitIcon className="opacity-60" aria-hidden="true" />

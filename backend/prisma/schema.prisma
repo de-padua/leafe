@@ -88,14 +88,22 @@ model accountMetadata {
   @@index([lastLogin])
 }
 
+enum PropertyType {
+  AP
+  HOUSE
+  LAND
+}
 
-model imovel {  
+model imovel {    
   id        String   @id  @unique
   title     String
   postedAt  DateTime @default(now())
   lastUpdate DateTime @updatedAt
-  textDescription String
+  description String
+  postId String
 
+
+  type  PropertyType
 
   log	String
   street    String
@@ -107,7 +115,6 @@ model imovel {
 
 
   price     Float     
-  IPTU      Float
   
 
   rooms     Int      
@@ -117,8 +124,8 @@ model imovel {
   floors Int
   age Int
   stage Int
-
-
+pool_size Int
+gatedCommunity_price Int
   furnished Boolean
   pool Boolean
   gym Boolean
@@ -148,10 +155,78 @@ model imovel {
   petFriendly Boolean
 
 
+
+
+
+      concierge Boolean
+      backupGenerator Boolean
+      waterReservoir Boolean
+      serviceElevator Boolean
+      coveredParking Boolean
+      visitorParking Boolean
+      carWash Boolean
+
+      sportsCourt Boolean
+      tennisCourt Boolean
+      squashCourt Boolean
+      soccerField Boolean
+      skatePark Boolean
+      runningTrack Boolean
+      playground Boolean
+      kidsRoom Boolean
+      gameRoom Boolean
+      cinemaRoom Boolean
+      musicStudio Boolean
+      spa Boolean
+      sauna Boolean
+      jacuzzi Boolean
+      heatedPool Boolean
+      indoorPool Boolean
+      kidsPool Boolean
+
+      communityGarden Boolean
+      orchard Boolean
+      meditationSpace Boolean
+      hammockArea Boolean
+      gourmetBarbecue Boolean
+      pizzaOven Boolean
+      firePit Boolean
+      outdoorLounge Boolean
+      panoramicDeck Boolean
+      rooftop Boolean
+
+      centralHeating Boolean
+      centralCooling Boolean
+      centralVacuum Boolean
+      homeAutomation Boolean
+      fiberInternet Boolean
+      cableTvReady Boolean
+      soundSystem Boolean
+      smartLighting Boolean
+      soundProofing Boolean
+
+      securityRoom Boolean
+      qrAccess Boolean
+      facialRecognition Boolean
+      panicButton Boolean
+      automaticGate Boolean
+
+      housekeeping Boolean
+      laundryService Boolean
+      coffeeShop Boolean
+      miniMarket Boolean
+      privateOffices Boolean
+      deliveryRoom Boolean
+      petCare Boolean
+      carSharing Boolean
+      bikeSharing Boolean
+      driverLounge Boolean
+
   area Int  
   built Int
 
-
+  isFinan Boolean      
+  financeBanks String[]        
 
   views Int
   isActive Boolean
