@@ -1,10 +1,6 @@
-# Backend
-===============
 
-Description
------------
-This is the backend portion of the *leafe* project. It provides server‑side functionality such as routing, data management, business logic, etc. It is meant to be used in conjunction with the frontend component of *leafe*.
 
+<<<<<<< HEAD
 Contents
 --------
 - Routes and controllers: logic for handling HTTP requests and defining API endpoints  
@@ -79,3 +75,6 @@ backend/
 
 
  
+=======
+ 
+>>>>>>> cc5a1beb9c3d3b93816add4262085013f2edeb83
