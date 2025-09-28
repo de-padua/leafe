@@ -192,6 +192,7 @@ export const useMinimalTiptapEditor = ({
   onUpdate,
   onBlur,
   uploader,
+  
   ...props
 }: UseMinimalTiptapEditorProps) => {
   const throttledSetValue = useThrottle(
@@ -212,6 +213,7 @@ export const useMinimalTiptapEditor = ({
     },
     [value]
   )
+
 
   const handleBlur = React.useCallback(
     (editor: Editor) => onBlur?.(getOutput(editor, output)),

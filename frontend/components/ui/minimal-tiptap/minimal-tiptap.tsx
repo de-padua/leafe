@@ -54,6 +54,7 @@ export const MinimalTiptapEditor = ({
     value,
     onUpdate: onChange,
     ...props,
+    
   })
 
   if (!editor) {
@@ -72,6 +73,7 @@ export const MinimalTiptapEditor = ({
     >
       <Toolbar editor={editor} />
       <EditorContent
+         
         editor={editor}
         className={cn("minimal-tiptap-editor", editorContentClassName)}
       />

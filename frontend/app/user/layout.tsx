@@ -1,3 +1,4 @@
+"use client"
 import { AppSidebar } from "@/components/app-sidebar";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive";
 import { DataTable } from "@/components/data-table";
@@ -17,7 +18,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       >
         <AppSidebar variant="inset" />
         <SidebarInset>
-          <SiteHeader />
           <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col gap-2">
               <div className="flex flex-col   md:gap-6  ">

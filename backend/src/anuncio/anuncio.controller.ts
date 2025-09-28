@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
@@ -20,6 +22,7 @@ import { PrismaService } from 'src/prisma.service';
 import { AuthGuard, CustomRequestWithId } from 'src/auth/auth.guard';
 import { AnuncioService } from './anuncio.service';
 import { throws } from 'assert';
+import { UpdatePostDTO } from './dto/updatePostDTO';
 
 @Controller('anuncio')
 export class AnuncioController {
@@ -51,6 +54,33 @@ export class AnuncioController {
     }
   }
 
+  @Patch()
+  @UseGuards(AuthGuard)
+  async updatePost(
+    @Req() request: CustomRequestWithId,
+    @Body() body: UpdatePostDTO,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      if (!request.id) return HttpStatus.UNAUTHORIZED;
+
+      const userId = request.id;
+
+      const data = await this.anuncioService.updateAd(
+        body,
+        body.postId,
+        userId,
+      );
+
+      return {
+        success: true,
+        data: data,
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
+
   @Post('pictures')
   @UseGuards(AuthGuard)
   @UseInterceptors(FilesInterceptor('files'))
@@ -65,6 +95,7 @@ export class AnuncioController {
       const data = await this.anuncioService.uploadImages(files, postId);
       return {
         success: true,
+        data: data,
       };
     } catch (err) {
       throw err;
@@ -72,6 +103,25 @@ export class AnuncioController {
   }
   @Post('teste')
   async teste() {
-    return "ok"
+    return {
+      success: true,
+    };
+  }
+
+  @Delete('pictures')
+  @UseGuards(AuthGuard)
+  async deleteImage(@Req() request: CustomRequestWithId, @Body() body: any) {
+    try {
+      if (!request.id) return HttpStatus.UNAUTHORIZED;
+      const { id, imovelId } = body;
+      const userId = request.id;
+      const data = await this.anuncioService.deleteImage(id, imovelId, userId);
+      return {
+        success: true,
+        data: data,
+      };
+    } catch (err) {
+      throw err;
+    }
   }
 }

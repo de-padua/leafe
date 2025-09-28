@@ -52,7 +52,7 @@ import * as RadioGroup_1 from "@radix-ui/react-radio-group";
 import { SizeIcon } from "@radix-ui/react-icons";
 import { v4 as uuidv4 } from "uuid";
 import { MinimalTiptapEditor } from "@/components/ui/minimal-tiptap";
-import { FileWithPreview } from "@/hooks/use-file-upload";
+import { FileWithPreview, useFileUpload } from "@/hooks/use-file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
 import CheckboxCardDemo from "@/components/customized/checkbox/checkbox-11";
 import { fi } from "zod/v4/locales";
@@ -94,7 +94,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { RichTextEditorDemo } from "@/components/tiptap/rich-text-editor";
+import { useParams, useSearchParams } from "next/navigation";
+import { useCacheStorage } from "@/lib/stores/userPostsCache";
+import { Imovel } from "@/types";
+import { Value } from "@radix-ui/react-select";
+import EditGalery from "@/components/anuncio/edit-galery";
 
 const formSchema = z
   .object({
@@ -162,9 +166,7 @@ const formSchema = z
       required_error: "Você precisa selecionar o tipo de imóvel.",
     }),
     area: z.coerce.number().transform((v) => Number(v) || 0),
-
     built: z.coerce.number(),
-
     financeBanks: z.array(z.string()),
     pool_size: z.coerce.number().optional(),
     gatedCommunity_price: z.coerce.number(),
@@ -196,7 +198,6 @@ const formSchema = z
     bikeRack: z.boolean(),
     coWorkingSpace: z.boolean(),
     petFriendly: z.boolean(),
-    /* 🏢 Estrutura */
     concierge: z.boolean(),
     backupGenerator: z.boolean(),
     waterReservoir: z.boolean(),
@@ -204,8 +205,6 @@ const formSchema = z
     coveredParking: z.boolean(),
     visitorParking: z.boolean(),
     carWash: z.boolean(),
-
-    /* 🏊‍♂️ Lazer e esportes */
     sportsCourt: z.boolean(),
     tennisCourt: z.boolean(),
     squashCourt: z.boolean(),
@@ -223,8 +222,6 @@ const formSchema = z
     heatedPool: z.boolean(),
     indoorPool: z.boolean(),
     kidsPool: z.boolean(),
-
-    /* 🌳 Áreas verdes e sociais */
     communityGarden: z.boolean(),
     orchard: z.boolean(),
     meditationSpace: z.boolean(),
@@ -235,8 +232,6 @@ const formSchema = z
     outdoorLounge: z.boolean(),
     panoramicDeck: z.boolean(),
     rooftop: z.boolean(),
-
-    /* 🛠️ Conforto e tecnologia */
     centralHeating: z.boolean(),
     centralCooling: z.boolean(),
     centralVacuum: z.boolean(),
@@ -246,15 +241,11 @@ const formSchema = z
     soundSystem: z.boolean(),
     smartLighting: z.boolean(),
     soundProofing: z.boolean(),
-
-    /* 🛡️ Segurança extra */
     securityRoom: z.boolean(),
     qrAccess: z.boolean(),
     facialRecognition: z.boolean(),
     panicButton: z.boolean(),
     automaticGate: z.boolean(),
-
-    /* 🛎️ Serviços e conveniência */
     housekeeping: z.boolean(),
     laundryService: z.boolean(),
     coffeeShop: z.boolean(),
@@ -265,9 +256,7 @@ const formSchema = z
     carSharing: z.boolean(),
     bikeSharing: z.boolean(),
     driverLounge: z.boolean(),
-    pictures: z
-      .array(z.any())
-      .min(1, { message: "Envie pelo menos uma foto." }),
+    pictures: z.array(z.any()),
   })
   .superRefine((data, ctx) => {
     if (data.type === "HOUSE" && !data.area && !data.built) {
@@ -298,133 +287,57 @@ const formSchema = z
     }
   });
 
+export type CustomImovel = Omit<
+  Imovel,
+  "rooms" | "bathrooms" | "bedrooms" | "garage" | "floors"
+> & {
+  rooms: string;
+  bathrooms: string;
+  bedrooms: string;
+  garage: string;
+  floors: string;
+  pictures: [];
+};
+
 function page() {
+  const params = useParams<{ editpage_postid: string }>();
+
+  const postData = useCacheStorage((state) =>
+    state.history.find((i) => i.id === params.editpage_postid)
+  );
+
+  if (!postData) return <div>...</div>;
+
+  const newPostdata: CustomImovel = {
+    ...postData,
+    rooms: postData?.rooms.toString(),
+    bathrooms: postData.bathrooms.toString(),
+    bedrooms: postData.bedrooms.toString(),
+    garage: postData.garage.toString(),
+    floors: postData.floors.toString(),
+
+    pictures: [],
+  };
+
+  console.log(postData);
+
+  return (
+    <div>
+      <FormComponent postData={newPostdata} />
+    </div>
+  );
+}
+export default page;
+
+function FormComponent({ postData }: { postData: CustomImovel }) {
+  const params = useParams<{ editpage_postid: string }>();
+
+  const overide = useCacheStorage((state) => state.overide);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      street: "",
-      city: "",
-      estate: "",
-      CEP: "",
-      log: "",
-      type: undefined,
-      rooms: "1",
-      bathrooms: "1",
-      garage: "1",
-      bedrooms: "1",
-      floors: "0",
-      age: 0,
-      stage: 0,
-      area: 0,
-      built: 0,
-      pool_size: 0,
-      price: 0,
-      gatedCommunity_price: 0,
-      isFinan: false,
-      financeBanks: [],
-      pictures: [],
-      /* Existentes */
-      furnished: false,
-      pool: false,
-      gym: false,
-      security: false,
-      elevator: false,
-      accessible: false,
-      balcony: false,
-      garden: false,
-      barbecueArea: false,
-      solarEnergy: false,
-      library: false,
-      wineCellar: false,
-      airConditioning: false,
-      smartHome: false,
-      laundryRoom: false,
-      gatedCommunity: false,
-      alarmSystem: false,
-      surveillanceCameras: false,
-      fingerprintAccess: false,
-      solarPanels: false,
-      chargingStation: false,
-      partyRoom: false,
-      guestParking: false,
-      petArea: false,
-      bikeRack: false,
-      coWorkingSpace: false,
-      petFriendly: false,
-
-      /* 🏢 Estrutura */
-      concierge: false,
-      backupGenerator: false,
-      waterReservoir: false,
-      serviceElevator: false,
-      coveredParking: false,
-      visitorParking: false,
-      carWash: false,
-
-      /* 🏊‍♂️ Lazer e esportes */
-      sportsCourt: false,
-      tennisCourt: false,
-      squashCourt: false,
-      soccerField: false,
-      skatePark: false,
-      runningTrack: false,
-      playground: false,
-      kidsRoom: false,
-      gameRoom: false,
-      cinemaRoom: false,
-      musicStudio: false,
-      spa: false,
-      sauna: false,
-      jacuzzi: false,
-      heatedPool: false,
-      indoorPool: false,
-      kidsPool: false,
-
-      /* 🌳 Áreas verdes e sociais */
-      communityGarden: false,
-      orchard: false,
-      meditationSpace: false,
-      hammockArea: false,
-      gourmetBarbecue: false,
-      pizzaOven: false,
-      firePit: false,
-      outdoorLounge: false,
-      panoramicDeck: false,
-      rooftop: false,
-
-      /* 🛠️ Conforto e tecnologia */
-      centralHeating: false,
-      centralCooling: false,
-      centralVacuum: false,
-      homeAutomation: false,
-      fiberInternet: false,
-      cableTvReady: false,
-      soundSystem: false,
-      smartLighting: false,
-      soundProofing: false,
-
-      /* 🛡️ Segurança extra */
-      securityRoom: false,
-      qrAccess: false,
-      facialRecognition: false,
-      panicButton: false,
-      automaticGate: false,
-
-      /* 🛎️ Serviços e conveniência */
-      housekeeping: false,
-      laundryService: false,
-      coffeeShop: false,
-      miniMarket: false,
-      privateOffices: false,
-      deliveryRoom: false,
-      petCare: false,
-      carSharing: false,
-      bikeSharing: false,
-      driverLounge: false,
-    },
+    defaultValues: { ...postData },
   });
+  const [deleteFiles, setDeleteFiles] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isPostCreated, setPostCreatedStatus] = useState(false);
   const [cepLoad, setCepLoad] = useState<boolean>(false);
@@ -493,22 +406,13 @@ function page() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (adFiles.length === 0) {
-      form.setError("pictures" as any, {
-        message: "Envie pelo menos uma foto.",
-      });
-      return;
-    }
-
     setIsLoading(true);
-
-    const postId = uuidv4();
 
     const { pictures, ...body } = values;
 
     const requestAdJSON = {
       ...body,
-      postId,
+      postId: postData.postId,
       rooms: Number(values.rooms),
       bathrooms: Number(values.bathrooms),
       garage: Number(values.garage),
@@ -517,7 +421,7 @@ function page() {
     };
 
     const data = await fetch(`http://localhost:5000/anuncio`, {
-      method: "POST",
+      method: "PATCH",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
@@ -535,24 +439,30 @@ function page() {
       return;
     }
 
-    const isPicturesUploaded = await sendPictures(adFiles, postId);
+    const isPicturesUploaded = await sendPictures(adFiles, postData.postId);
 
-    if (isPicturesUploaded !== true) {
+    if (isPicturesUploaded.success !== true) {
       form.setError("root", {
         message: "Erro ao enviar imagens. Tente novamente.",
       });
 
       setIsLoading(false);
-
       return;
     }
 
     setIsLoading(false);
     setPostCreatedStatus(true);
-    console.log("Imagens enviadas com sucesso!");
+    overide(isPicturesUploaded.data);
+    setDeleteFiles(true)
+    return
   }
 
-  async function sendPictures(files: FileWithPreview[], postId: string) {
+
+
+  const setIsSuccessDeletings = () => {
+    return setDeleteFiles(false)
+  }
+    async function sendPictures(files: FileWithPreview[], postId: string) {
     const formData = new FormData();
 
     adFiles.forEach((photo) => {
@@ -568,7 +478,7 @@ function page() {
     });
     const response = await data.json();
 
-    return response.success;
+    return response;
   }
 
   type FormValues = z.infer<typeof formSchema>;
@@ -579,6 +489,8 @@ function page() {
 
   const getFiles = async (files: FileWithPreview[]) => {
     setFiles(files);
+    if (files === null) return form.setValue("pictures", []);
+
     form.setValue("pictures", files);
   };
 
@@ -676,6 +588,7 @@ function page() {
   ];
   const banheiros = [
     { value: "0", label: "0" },
+
     { value: "1", label: "1" },
     { value: "2", label: "2" },
     { value: "3", label: "3" },
@@ -685,6 +598,7 @@ function page() {
 
   const garagem = [
     { value: "0", label: "0" },
+
     { value: "1", label: "1" },
     { value: "2", label: "2" },
     { value: "3", label: "3" },
@@ -2474,35 +2388,20 @@ function page() {
     },
   ];
 
-  
   return (
-    <div className="">
-      <div className="flex items-center justify-center flex-col ">
-        <div className="flex flex-col lg:p-30 lg:py-10 w-full p-5 ">
+    <div className="w-full ">
+      <div className="flex items-center justify-center flex-col  w-full">
+        <div className="flex flex-col  lg:py-10 w-full p-5  ">
           <div className="space-y-3 border-b pb-4">
             <h2 className="text-2xl  lg:text-4xl font-semibold">
-              Crie seu anúncio em poucos passos
+              Edite seu anúncio
             </h2>
             <p className="text-xs  lg:text-sm text-muted-foreground">
-              Preencha as informações abaixo para cadastrar seu imóvel. Os
-              campos obrigatórios estão marcados com{" "}
+              Preencha as informações abaixo para editar seu imóvel. Os campos
+              obrigatórios estão marcados com
               <span className="text-red-500">*</span>.
             </p>
-            <div className=" ">
-              <ul className="list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-                <li>
-                  Preencha todos os campos marcados com{" "}
-                  <span className="text-red-500">*</span>.
-                </li>
-                <li>Use informações reais e claras sobre o imóvel.</li>
-                <li>
-                  Informe valores em{" "}
-                  <span className="font-medium">Reais (R$)</span>.
-                </li>
-                <li>Fotos: máximo 10 arquivos de até 5MB cada.</li>
-                <li>Revise os dados antes de publicar o anúncio.</li>
-              </ul>
-            </div>
+            <div className=" "></div>
           </div>
           <Form {...form}>
             <form
@@ -2550,9 +2449,9 @@ function page() {
                             <FormControl className="">
                               <MinimalTiptapEditor
                                 value={() => {
-                                  form.getValues().description.length === 0
-                                    ? undefined
-                                    : form.getValues().description;
+                                  form.getValues().description.length > 0
+                                    ? form.getValues().description.toString()
+                                    : null;
                                 }}
                                 onChange={(value) => {
                                   if (!value) return;
@@ -2567,6 +2466,11 @@ function page() {
                                 placeholder="Enter your description..."
                                 autofocus={false}
                                 editable={true}
+                                onCreate={(editor) => {
+                                  editor.editor.commands.setContent(
+                                    form.getValues().description
+                                  );
+                                }}
                                 editorClassName="focus:outline-hidden"
                               />
                             </FormControl>
@@ -3620,13 +3524,23 @@ function page() {
                     </Description>
                   </Header>
                   <Body>
+                    <EditGalery
+                      images={postData.imovelImages}
+                      data={postData}
+                    />
                     <FormField
                       control={form.control}
                       name="pictures"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Galery getFiles={getFiles}  images={[]}/>
+                            <Galery
+                              getFiles={getFiles}
+                              postImagesIsFull={postData.imovelImages.length >= 15 ? true : false}
+                              postImagesTotalLenght={postData.imovelImages.length}
+                              deleteFiles={deleteFiles}
+                              setIsSuccessDeletings={setIsSuccessDeletings}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -3655,8 +3569,6 @@ function page() {
   );
 }
 
-export default page;
-
 function Success() {
   return (
     <div className="mx-auto p-6 text-center h-screen flex items-center justify-center flex-col">
@@ -3680,7 +3592,7 @@ function Success() {
           <Link href="/user/dashboard/imovel?page=1">Ver Meus Anúncios</Link>
         </Button>
         <Button asChild>
-          <Link href="/anuncio/novo#" >Criar Outro Anúncio</Link>
+          <Link href="/anuncio/novo#">Criar Outro Anúncio</Link>
         </Button>
       </div>
     </div>
@@ -3731,8 +3643,6 @@ function Body({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
-
-
 
 /**if (isPostCreated) {
     return <Success />;

@@ -243,11 +243,13 @@ gatedCommunity_price Int
 
 
 model imovelImages {
-  id String @id @unique 
+  id String @id @unique
+  imageName String
+  imageSize Int
+  imageType String
   imageUrl String
-
- imovelId String
-
- imovel imovel @relation(fields: [imovelId],references: [id],onDelete: Cascade)
+  imovelId String
+  createdAt DateTime  @default(now())
+  imovel imovel @relation(fields: [imovelId],references: [id],onDelete: Cascade)
 
 }

@@ -6,8 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "migrate": "docker compose exec server_dev npx prisma migrate dev",
-    "reset": "docker compose exec server_dev npx prisma migrate reset",
+    "migrate": "docker compose exec -w /usr/src/app/backend server_dev npx prisma migrate dev",
+    "reset": "docker compose exec -w /usr/src/app/backend server_dev npx prisma migrate reset",
     "generate": "npx prisma generate",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

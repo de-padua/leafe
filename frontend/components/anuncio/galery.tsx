@@ -14,9 +14,15 @@ import {
   XIcon,
 } from "lucide-react";
 
-import { FileWithPreview, formatBytes, useFileUpload } from "@/hooks/use-file-upload";
+import {
+  FileWithPreview,
+  formatBytes,
+  useFileUpload,
+} from "@/hooks/use-file-upload";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { max } from "date-fns";
+import { clear } from "console";
 
 const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
   const fileType = file.file instanceof File ? file.file.type : file.file.type;
@@ -74,14 +80,25 @@ const getFilePreview = (file: {
 
 type GaleryProps = {
   getFiles: (images: FileWithPreview[]) => void;
+  deleteFiles: boolean;
+  setIsSuccessDeletings: () => void;
+  postImagesIsFull: boolean;
+  postImagesTotalLenght:number
 };
 
-export default function Galery({ getFiles }: GaleryProps) {
+export default function Galery({
+  postImagesIsFull,
+  getFiles,
+  deleteFiles,
+  setIsSuccessDeletings,
+  postImagesTotalLenght
+}: GaleryProps) {
   /// IMAGE GALERY
   const maxSizeMB = 5;
   const maxSize = maxSizeMB * 1024 * 1024;
-  const maxFiles = 15;
+  const maxFiles =  15 - postImagesTotalLenght;
 
+  const [isDeletingFiles, setIsDeletingFiles] = useState(false);
   const [
     { files, isDragging, errors },
     {
@@ -102,9 +119,15 @@ export default function Galery({ getFiles }: GaleryProps) {
   });
 
   useEffect(() => {
-
     getFiles(files);
   }, [files]);
+
+  useEffect(() => {
+    if (deleteFiles === true) {
+      clearFiles();
+      setIsSuccessDeletings();
+    }
+  }, [deleteFiles]);
 
   return (
     <div className="flex flex-col gap-2  w-full  rounded-md ">
@@ -192,14 +215,21 @@ export default function Galery({ getFiles }: GaleryProps) {
             >
               <ImageIcon className="size-4 opacity-60" />
             </div>
-            <p className="text-muted-foreground text-xs">
-              Máximo de {maxFiles} fotos ∙ Até {maxSizeMB}MB
-            </p>
+            {postImagesIsFull ? (
+              <p className="text-muted-foreground text-xs">
+                Máximo de imagens atingido,delete imagens antes de adicionar.
+              </p>
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                Máximo de {maxFiles} fotos ∙ Até {maxSizeMB}MB
+              </p>
+            )}
             <Button
               type="button"
               variant="outline"
               className="mt-4 text-sm text-muted-foreground cursor-pointer"
               onClick={openFileDialog}
+              disabled={postImagesIsFull}
             >
               <UploadIcon className="-ms-1 " aria-hidden="true" />
               Selecione imagens

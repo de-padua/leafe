@@ -3,7 +3,7 @@
 import { Imovel } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Carousel,
   CarouselContent,
@@ -11,7 +11,21 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { CheckIcon } from "lucide-react";
+import {
+  Bath,
+  Bed,
+  Car,
+  CheckIcon,
+  Eye,
+  HousePlusIcon,
+  ImageIcon,
+  Mail,
+  Pen,
+  Share,
+  Star,
+  TrendingUp,
+  Tv,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
@@ -25,8 +39,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import { IconArrowLeft, IconArrowLeftFromArc } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardBody } from "@/components/custom/card-user-datas";
+import { useCacheStorage } from "@/lib/stores/userPostsCache";
 export default function page() {
   const params = useParams<{ postid: string }>();
+  const route = useRouter();
+  const setPost = useCacheStorage((state) => state.add);
   const [hasDetailsState, setHasDetails] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -54,6 +73,8 @@ export default function page() {
         }
 
         const data: Imovel = await response.json();
+
+        setPost(data);
 
         return data;
       } catch (err) {
@@ -175,7 +196,7 @@ export default function page() {
 
   const url = `https://maps.google.com/maps?q=${encodeURIComponent(
     endereco
-  )}&t=&z=14&ie=UTF8&iwloc=B&output=embed`;
+  )}&t=&z=12&ie=UTF8&iwloc=B&output=embed`;
 
   const details = Object.keys(data).filter(
     (key) =>
@@ -188,150 +209,276 @@ export default function page() {
   return (
     <div className="flex items-center justify-center w-full flex-col px-5 py-7 space-y-4">
       <div className="w-full flex items-center justify-between">
-       <div className="flex items-center justify-between gap-x-2">
-         <Button size={"icon"} ><IconArrowLeft /></Button>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/user/dashboard/imoveis/list/q?page=1">
-                Dashboard
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/user/dashboard/imoveis/list/q?page=1">
-                Imóveis
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Visualização</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-       </div>
-
-        <div>
-          {data.isActive ? (
-            <Badge variant="outline" className="gap-1.5 text-emerald-600">
-              <span
-                className="size-1.5 rounded-full bg-emerald-500"
-                aria-hidden="true"
-              ></span>
-              Ativo
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1.5 text-emerald-600">
-              <span
-                className="size-1.5 rounded-full bg-emerald-500"
-                aria-hidden="true"
-              ></span>
-              Ativo
-            </Badge>
-          )}
+        <div className="flex items-center justify-between gap-x-2">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/user/dashboard/imoveis/list/q?page=1">
+                  Dashboard
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/user/dashboard/imoveis/list/q?page=1">
+                  Imóveis
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Visualização</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className="flex items-center justify-center gap-x-2">
+          <Button size={"icon"} variant={"outline"}>
+            <IconArrowLeft />
+          </Button>
+          <Button
+            className="gap-x-1"
+            size={"sm"}
+            onClick={() => {
+              route.push("/user/dashboard/edit/" + data.postId);
+            }}
+          >
+            Editar <Pen />
+          </Button>
         </div>
       </div>
-      <div className="w-full flex items-center justify-between ">
-        <div>
-          <h2 className="text-3xl font-semibold grayscale">{data.title} </h2>
-          <p className="text-sm">
-            {data.estate} - {data.city} , {data.street} {data.CEP}
+      <div className="w-full"></div>
+
+      <div className="w-full my-3 mb-7">
+        <div className="w-full my-2">
+          <h2 className="text-2xl font-semibold">Métricas</h2>
+        </div>
+
+        <div className="w-full grid grid-cols-4  gap-4">
+          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <p className=""> Visualizações</p>
+              <Eye width={15} height={15} />
+            </div>
+            <div>
+              <div className="flex items-center justify-start gap-x-1">
+                <p className="font-semibold">134</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Vezes em que usuários viram esse anúncio
+              </p>
+            </div>
+          </div>
+          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <p className=" "> Favoritados</p>
+              <Star width={15} height={15} />
+            </div>
+            <div>
+              <div className="flex items-center justify-start gap-x-1">
+                <p className="font-semibold">1304</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Vezes em que usuários salvaram esse anúncio
+              </p>
+            </div>
+          </div>
+          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <p className=" "> Mensagens </p>
+              <Mail width={15} height={15} />
+            </div>
+            <div>
+              <div className="flex items-center justify-start gap-x-1">
+                <p className="font-semibold">345</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Vezes em que usuários mandaram mensagem
+              </p>
+            </div>
+          </div>
+          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <p className=" "> Compartilhamentos </p>
+              <Share width={15} height={15} />
+            </div>
+            <div>
+              <div className="flex items-center justify-start gap-x-1">
+                <p className="font-semibold">48</p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Vezes em que o anúncio foi compartilhado
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full flex items-start justify-between ">
+        <div className="w-2/3">
+          <div className="flex items-center justify-start w-full  ">
+            <h2 className="text-3xl font-semibold grayscale w-full ">
+              {data.title}{" "}
+            </h2>
+          </div>
+          <p className="text-sm mb-2 text-muted-foreground">
+            {data.estate} - {data.city} , {data.street} - {data.CEP}
           </p>
         </div>
         <div className="grayscale">
           <h2 className="text-3xl font-semibold ">
             {formCurrency.format(data.price)}{" "}
           </h2>
-          <p className="text-sm">
-            {formCurrency.format(Math.round(data.price / data.built))} por metro
-            quadrado{" "}
-          </p>
+          {data.built > 0 ? (
+            <p className="text-sm">
+              {" "}
+              {formCurrency.format(Math.floor(data.price / data.built))} / m²
+            </p>
+          ) : null}
         </div>
       </div>
-      <Carousel
-        opts={{
-          align: "start",
-        }}
-        className="w-full "
-      >
-        <CarouselContent>
-          {data.imovelImages.map((image, index) => (
-            <CarouselItem
-              key={index}
-              className="md:basis-1/2 lg:basis-1/3 h-[400px]"
-            >
-              <div className="h-full flex items-center justify-center  ">
-                <Image
-                  src={image.imageUrl}
-                  width={1000}
-                  height={1000}
-                  alt="imagem"
-                  className="h-full object-cover rounded-md"
-                />
-              </div>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious />
-        <CarouselNext />
-      </Carousel>
+      <div className="grid grid-cols-3 gap-2  w-full bg-amber-700 ">
+        <div className=" flex items-start justify-start col-span-2 gap-x-2 h-[400px] bg-amber-600">
+          <div className="flex items-center justify-center border rounded-md w-full h-full bg-amber-600">
+            <Image
+            src={data.imovelImages[0].imageUrl}
+            width={400}
+            height={400}
+            alt="imagem"
+            className="w-full h-full object-cover rounded-md"
+          />
+          </div>
+          <div className="grid grid-cols-1   w-1/6 rounded-md h-[400px]  bg-neutral-600">
+            {data.imovelImages.map((image, index) => {
+              return index > 1 ? null : (
+                <div className="w-full flex items-center justify-center aspect-square border rounded-md  h-full" key={image.id}>
+                  {" "}
+                  <Image
+            src={image.imageUrl}
+            width={400}
+            height={400}
+            alt="imagem"
+            className="h-full object-cover rounded-md"
+          />
+                </div>
+              );
+            })}
 
-      <div className="">
-        <h2 className="text-2xl font-semibold">Descrição</h2>
+            <div className=" w-full h-full  aspect-square bg-accent flex items-center justify-center rounded-md border">
+              {" "}
+              <p className="text-xs text-muted-foreground cursor-pointer opacity-70">
+                Ver todas{" "}
+                <span className="flex items-center justify-center gap-x-1">
+                  {" "}
+                  {data.imovelImages.length + 1}{" "}
+                  <ImageIcon width={15} height={15} />{" "}
+                </span>{" "}
+                imagens
+              </p>
+            </div>
+          </div>
+        </div>
+        {url && (
+          <div className="relative w-full h-full">
+            <iframe
+              src={url}
+              
+              width="100%"
+              height="100%"
+              className="border-0 rounded-md "
+              loading="lazy"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="w-full">
+        <h2 className="text-2xl font-semibold mb-3 mt-6">Descrição</h2>
         <p
           className="text-sm"
           dangerouslySetInnerHTML={{ __html: data.description }}
         ></p>
       </div>
 
-      <div className=" w-full">
-        <h2 className="text-2xl font-semibold">Detalhes</h2>
+      <div className="flex items-start justify-between w-full h-full">
+        <div className="w-2/3">
+          <div className="w-full">
+            <h2 className="text-2xl font-semibold my-4">Características</h2>
 
-        <div className="grid grid-cols-4 text-muted-foreground text-sm">
-          <p>Quartos : {data.rooms}</p>
-          <p>Banheiros : {data.bathrooms}</p>
-          <p>Banheiros : {data.garage}</p>
-          <p>Pisos : {data.floors === 0 ? "Terreo" : data.floors}</p>
-        </div>
-        <Separator className="my-2" />
-        <div>
-          {hasDetails && (
-            <div>
-              <p className="font-semibold mb-2">Mais detalhes</p>
-              <div className="grid grid-cols-4 w-full gap-y-1">
-                {details.map((key) => (
-                  <p
-                    key={key}
-                    className="text-muted-foreground text-sm flex items-center justify-start gap-x-2"
-                  >
-                    {featureLabels[key] ?? key}{" "}
-                    <CheckIcon width={10} height={10} />{" "}
-                  </p>
-                ))}
-              </div>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              <p>Área construída: {data.built} m²</p>
+              <p>Área total do terreno: {data.area} m²</p>
             </div>
-          )}
-        </div>
-      </div>
-      <div className=" w-full">
-        <h2 className="text-2xl font-semibold">
-          Opções de Financiamento do Imóvel
-        </h2>
-        {data.financeBanks.length > 0 ? (
-          <div>
-            <div className="grid grid-cols-2 gap-2 w-fit">
-              {data.financeBanks.map((i) => (
-                <div key={i} className="text-xs px-2 py-2 w-fit">
-                  {i}
-                </div>
-              ))}
+
+            <h3 className="text-xl font-medium mt-6 mb-2">
+              Detalhes do imóvel
+            </h3>
+
+            <div className="  grid grid-cols-6  gap-2 text-sm text-muted-foreground">
+              <p className="flex items-center justify-start gap-x-1 w-fit">
+                {data.bedrooms}{" "}
+                {data.bedrooms > 1 ? "Dormitórios" : "Dormitório"}{" "}
+                <Bed width={15} height={15} />
+              </p>
+              <p className="flex items-center justify-start gap-x-1 w-fit">
+                {data.garage} Vagas <Car width={15} height={15} />{" "}
+              </p>
+              <p className="flex items-center justify-start gap-x-1 w-fit">
+                {data.bathrooms} Banheiros <Bath width={15} height={15} />{" "}
+              </p>
+              <p className="flex items-center justify-start gap-x-1 w-fit">
+                {data.rooms} Salas <Tv width={15} height={15} />
+              </p>
+              {data.gatedCommunity && (
+                <p className="flex items-center justify-start gap-x-1 w-fit">
+                  Condomínio <HousePlusIcon width={15} height={15} />{" "}
+                </p>
+              )}
             </div>
           </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            Sem opção de financiamento.
-          </p>
-        )}
+
+          <div className=" w-full">
+            <h2 className="text-2xl font-semibold mb-3 mt-6">
+              Características Adicionais
+            </h2>
+
+            <div>
+              {hasDetails && (
+                <div>
+                  <div className="grid grid-cols-4 w-full gap-y-1">
+                    {details.map((key) => (
+                      <p
+                        key={key}
+                        className="text-muted-foreground text-sm flex items-center justify-start gap-x-2"
+                      >
+                        {featureLabels[key] ?? key}{" "}
+                        <CheckIcon width={10} height={10} />{" "}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className=" w-full">
+              <h2 className="text-2xl font-semibold mb-3 mt-6">
+                Opções de Financiamento do Imóvel
+              </h2>
+              {data.financeBanks.length > 0 ? (
+                <div>
+                  <div className="grid grid-cols-2 gap-2 w-fit">
+                    {data.financeBanks.map((i) => (
+                      <div key={i} className="text-xs px-2 py-2 w-fit">
+                        {i}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Sem opção de financiamento.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -53,7 +53,7 @@ export const CardIcon = ({
   className?: string;
 }) => {
   return (
-    <div className={cn("top-[6px] relative ", className)} {...props}>
+    <div className={cn("top-[3px] relative ", className)} {...props}>
       {children}
     </div>
   );

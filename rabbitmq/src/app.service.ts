@@ -72,6 +72,9 @@ export class AppService {
     const paths: {
       imovelId: string;
       imageUrl: string;
+      imageName:string,
+      imageSize:number,
+      imageType:string,
       id:UUID
     }[] = [];
 
@@ -116,6 +119,9 @@ export class AppService {
           paths.push({
             imovelId: postId,
             imageUrl: path,
+            imageName: file.originalname,
+            imageSize:file.size,
+            imageType:file.mimetype,
             id:randomUUID()
           });
         }),

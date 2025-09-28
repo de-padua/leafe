@@ -1,5 +1,4 @@
-
-export type User  = {
+export type User = {
   id: string;
   email: string;
   password?: string;
@@ -17,16 +16,26 @@ export type User  = {
   recoveryPhone: string;
   lastUpdateOnRecoveryEmail: Date | null;
   lastUpdateOnPassword: Date | null;
-  recoveryEmailChangeAvailableWhen :Date
-  recoveryCodes:{id:string,code:string,isUsed:boolean,userId:string}[]
-}
+  recoveryEmailChangeAvailableWhen: Date;
+  recoveryCodes: {
+    id: string;
+    code: string;
+    isUsed: boolean;
+    userId: string;
+  }[];
+};
 
-export type  recoveryCode ={id:string,code:string,isUsed:boolean,userId:string}
+export type recoveryCode = {
+  id: string;
+  code: string;
+  isUsed: boolean;
+  userId: string;
+};
 
 export type AccountMetadata = {
   id: string;
   userId: string;
- recoveryCodesGenerated :boolean
+  recoveryCodesGenerated: boolean;
   // Autenticação
   emailVerified: boolean;
   twoFactorEnabled: boolean;
@@ -72,9 +81,9 @@ export type UserWithoutProperties = {
   session?: Session | null;
   createdAt: Date;
   imoveisTotalLenght: number;
-}
+};
 
-export enum PropertyType  {
+export enum PropertyType {
   AP,
   HOUSE,
   LAND,
@@ -223,7 +232,8 @@ export type ImovelImages = {
   id: string;
   imageUrl: string;
   imovelId: string;
-  imovel: Imovel;
+  imovel?: Imovel;
+  imageName: string;
+  imageSize: number;
+  imageType: string;
 };
-
-

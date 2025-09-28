@@ -76,9 +76,6 @@ backend/
 └── server.js (or index.js) …
 ```
 
-Testing
--------
 
-### TESTS ARE NOT AVAILABLE < 
 
  
