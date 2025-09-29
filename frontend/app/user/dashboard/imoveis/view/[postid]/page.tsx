@@ -12,6 +12,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import {
+  ArrowLeft,
   Bath,
   Bed,
   Car,
@@ -27,7 +28,7 @@ import {
   Tv,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -42,11 +43,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardBody } from "@/components/custom/card-user-datas";
 import { useCacheStorage } from "@/lib/stores/userPostsCache";
+import EditGalery from "@/components/anuncio/edit-galery";
+import GaleryWithThumbs from "@/components/anuncio/GaleryWithThumbs";
 export default function page() {
   const params = useParams<{ postid: string }>();
   const route = useRouter();
   const setPost = useCacheStorage((state) => state.add);
   const [hasDetailsState, setHasDetails] = useState(false);
+  const [openGalery, setOpenGalery] = useState<boolean>(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["data"],
@@ -87,6 +91,22 @@ export default function page() {
     currency: "BRL",
     minimumFractionDigits: 2,
   });
+
+  const handleOpenImageGaleryWithThumbs = () => {
+    setOpenGalery(true);
+  };
+  
+  const handleCloseGalery = () => {
+    setOpenGalery(false);
+  };
+  
+  useEffect(() => {
+    if (openGalery) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [openGalery]);
 
   const featureLabels: Record<string, string> = {
     // 🏠 Básico
@@ -205,6 +225,7 @@ export default function page() {
       key !== "isFinan" &&
       key !== "isActive"
   );
+
   const hasDetails = details.length > 0;
   return (
     <div className="flex items-center justify-center w-full flex-col px-5 py-7 space-y-4">
@@ -335,52 +356,46 @@ export default function page() {
           ) : null}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2  w-full bg-amber-700 ">
-        <div className=" flex items-start justify-start col-span-2 gap-x-2 h-[400px] bg-amber-600">
-          <div className="flex items-center justify-center border rounded-md w-full h-full bg-amber-600">
+      <div className="grid grid-cols-3 gap-2  w-full  ">
+        <div
+          className=" flex items-start justify-start col-span-2 gap-x-2 h-[400px]  "
+          onClick={() => {
+            handleOpenImageGaleryWithThumbs();
+          }}
+        >
+          <div className="flex items-center justify-center border rounded-md w-full h-full ">
             <Image
-            src={data.imovelImages[0].imageUrl}
-            width={400}
-            height={400}
-            alt="imagem"
-            className="w-full h-full object-cover rounded-md"
-          />
+              src={data.imovelImages[0].imageUrl}
+              width={400}
+              height={400}
+              alt="imagem"
+              className="w-full h-full object-cover rounded-md"
+            />
           </div>
-          <div className="grid grid-cols-1   w-1/6 rounded-md h-[400px]  bg-neutral-600">
+          <div className="grid grid-cols-1 gap-y-2   w-1/6 rounded-md h-[400px] ">
             {data.imovelImages.map((image, index) => {
               return index > 1 ? null : (
-                <div className="w-full flex items-center justify-center aspect-square border rounded-md  h-full" key={image.id}>
+                <div
+                  className="w-full flex items-center justify-center aspect-square border rounded-md  h-full"
+                  key={image.id}
+                >
                   {" "}
                   <Image
-            src={image.imageUrl}
-            width={400}
-            height={400}
-            alt="imagem"
-            className="h-full object-cover rounded-md"
-          />
+                    src={image.imageUrl}
+                    width={400}
+                    height={400}
+                    alt="imagem"
+                    className="h-full object-cover rounded-md"
+                  />
                 </div>
               );
             })}
-
-            <div className=" w-full h-full  aspect-square bg-accent flex items-center justify-center rounded-md border">
-              {" "}
-              <p className="text-xs text-muted-foreground cursor-pointer opacity-70">
-                Ver todas{" "}
-                <span className="flex items-center justify-center gap-x-1">
-                  {" "}
-                  {data.imovelImages.length + 1}{" "}
-                  <ImageIcon width={15} height={15} />{" "}
-                </span>{" "}
-                imagens
-              </p>
-            </div>
           </div>
         </div>
         {url && (
           <div className="relative w-full h-full">
             <iframe
               src={url}
-              
               width="100%"
               height="100%"
               className="border-0 rounded-md "
@@ -389,7 +404,23 @@ export default function page() {
           </div>
         )}
       </div>
-
+      {openGalery && (
+        <div className="h-fit">
+          <div className="">
+            <Button
+              variant={"outline"}
+              className={"cursor-pointer z-40"}
+              size={"icon"}
+              onClick={() => {
+                setOpenGalery(false);
+              }}
+            >
+              <ArrowLeft />
+            </Button>
+          </div>
+          <GaleryWithThumbs images={data.imovelImages} handleCloseGalery={handleCloseGalery} />
+        </div>
+      )}
       <div className="w-full">
         <h2 className="text-2xl font-semibold mb-3 mt-6">Descrição</h2>
         <p
