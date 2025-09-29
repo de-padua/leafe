@@ -95,11 +95,11 @@ export default function page() {
   const handleOpenImageGaleryWithThumbs = () => {
     setOpenGalery(true);
   };
-  
+
   const handleCloseGalery = () => {
     setOpenGalery(false);
   };
-  
+
   useEffect(() => {
     if (openGalery) {
       document.body.style.overflow = "hidden";
@@ -268,71 +268,6 @@ export default function page() {
       </div>
       <div className="w-full"></div>
 
-      <div className="w-full my-3 mb-7">
-        <div className="w-full my-2">
-          <h2 className="text-2xl font-semibold">Métricas</h2>
-        </div>
-
-        <div className="w-full grid grid-cols-4  gap-4">
-          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <p className=""> Visualizações</p>
-              <Eye width={15} height={15} />
-            </div>
-            <div>
-              <div className="flex items-center justify-start gap-x-1">
-                <p className="font-semibold">134</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Vezes em que usuários viram esse anúncio
-              </p>
-            </div>
-          </div>
-          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <p className=" "> Favoritados</p>
-              <Star width={15} height={15} />
-            </div>
-            <div>
-              <div className="flex items-center justify-start gap-x-1">
-                <p className="font-semibold">1304</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Vezes em que usuários salvaram esse anúncio
-              </p>
-            </div>
-          </div>
-          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <p className=" "> Mensagens </p>
-              <Mail width={15} height={15} />
-            </div>
-            <div>
-              <div className="flex items-center justify-start gap-x-1">
-                <p className="font-semibold">345</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Vezes em que usuários mandaram mensagem
-              </p>
-            </div>
-          </div>
-          <div className=" p-4 rounded-md border  h-fit space-y-2 text-muted-foreground">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <p className=" "> Compartilhamentos </p>
-              <Share width={15} height={15} />
-            </div>
-            <div>
-              <div className="flex items-center justify-start gap-x-1">
-                <p className="font-semibold">48</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Vezes em que o anúncio foi compartilhado
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="w-full flex items-start justify-between ">
         <div className="w-2/3">
           <div className="flex items-center justify-start w-full  ">
@@ -356,53 +291,70 @@ export default function page() {
           ) : null}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2  w-full  ">
-        <div
-          className=" flex items-start justify-start col-span-2 gap-x-2 h-[400px]  "
-          onClick={() => {
-            handleOpenImageGaleryWithThumbs();
-          }}
-        >
-          <div className="flex items-center justify-center border rounded-md w-full h-full ">
-            <Image
-              src={data.imovelImages[0].imageUrl}
-              width={400}
-              height={400}
-              alt="imagem"
-              className="w-full h-full object-cover rounded-md"
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-y-2   w-1/6 rounded-md h-[400px] ">
-            {data.imovelImages.map((image, index) => {
-              return index > 1 ? null : (
-                <div
-                  className="w-full flex items-center justify-center aspect-square border rounded-md  h-full"
-                  key={image.id}
-                >
-                  {" "}
-                  <Image
-                    src={image.imageUrl}
-                    width={400}
-                    height={400}
-                    alt="imagem"
-                    className="h-full object-cover rounded-md"
-                  />
+      <div className="w-full flex items-center justify-center  ">
+        <div className="grid grid-cols-3 gap-2   w-full ">
+          <div className="col-span-2 relative   ">
+            <div onClick={() => {
+                handleOpenImageGaleryWithThumbs();
+              }} className="absolute w-full flex items-center justify-center h-full opacity-0  hover:bg-stone-900/90 hover:opacity-80 transition-all rounded-md p-1 cursor-pointer">
+              <div className="text-center font-semibold  text-white">
+                <p className="">Ver todas as</p>
+                <div className="flex items-center justify-center gap-x-1">
+                  <p>{data.imovelImages.length}</p>
+                  <ImageIcon />
                 </div>
-              );
-            })}
+                <p>Imagens</p>
+              </div>
+            </div>
+            <div
+              className=" w-full   col-span-2 flex items-start justify-start  gap-x-2 h-[400px]   "
+              onClick={() => {
+                handleOpenImageGaleryWithThumbs();
+              }}
+            >
+              <div className="flex items-center justify-center border rounded-md w-full h-full ">
+                <Image
+                  src={data.imovelImages[0].imageUrl}
+                  width={400}
+                  height={400}
+                  alt="imagem"
+                  className="w-full h-full object-cover rounded-md"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-y-2   w-1/6 rounded-md h-[400px] ">
+                {data.imovelImages.map((image, index) => {
+                  return index > 1 ? null : (
+                    <div
+                      className="w-full flex items-center justify-center aspect-square border rounded-md  h-full"
+                      key={image.id}
+                    >
+                      {" "}
+                      <Image
+                        src={image.imageUrl}
+                        width={400}
+                        height={400}
+                        alt="imagem"
+                        className="h-full object-cover rounded-md"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
+
+          {url && (
+            <div className="relative w-full h-full">
+              <iframe
+                src={url}
+                width="100%"
+                height="100%"
+                className="border-0 rounded-md "
+                loading="lazy"
+              />
+            </div>
+          )}
         </div>
-        {url && (
-          <div className="relative w-full h-full">
-            <iframe
-              src={url}
-              width="100%"
-              height="100%"
-              className="border-0 rounded-md "
-              loading="lazy"
-            />
-          </div>
-        )}
       </div>
       {openGalery && (
         <div className="h-fit">
@@ -418,7 +370,10 @@ export default function page() {
               <ArrowLeft />
             </Button>
           </div>
-          <GaleryWithThumbs images={data.imovelImages} handleCloseGalery={handleCloseGalery} />
+          <GaleryWithThumbs
+            images={data.imovelImages}
+            handleCloseGalery={handleCloseGalery}
+          />
         </div>
       )}
       <div className="w-full">

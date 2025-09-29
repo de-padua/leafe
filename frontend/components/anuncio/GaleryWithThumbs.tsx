@@ -75,6 +75,7 @@ function GaleryWithThumbs({
 
     api.on("scroll", (current) => {
       api_2.scrollTo(current.selectedScrollSnap());
+      setCurrentImageIndex(current.selectedScrollSnap());
     });
 
     if (openGalery) {
@@ -85,7 +86,7 @@ function GaleryWithThumbs({
   }, [openGalery, api]);
   return (
     <div className="fixed inset-0 z-50 bg-white  top-0 overflow-y-auto">
-      <div className=" flex items-center justify-between  mb-5  py-2 px-6 sticky top-0 bg-white z-50">
+      <div className=" flex items-center justify-end  mb-5  py-2 px-6 sticky top-0 bg-white z-50">
         <Button
           variant={"outline"}
           className={"cursor-pointer"}
@@ -99,8 +100,8 @@ function GaleryWithThumbs({
       </div>
 
       <div className="w-full flex items-center justify-center ">
-        <div className="w-1/2  flex items-center justify-center flex-col ">
-          <Carousel className="" setApi={setApi}>
+        <div className="w-full  flex items-center justify-center flex-col ">
+          <Carousel className="w-1/2" setApi={setApi}>
             <CarouselContent>
               {images.map((i, index) => (
                 <CarouselItem
@@ -127,10 +128,13 @@ function GaleryWithThumbs({
             <CarouselNext />
           </Carousel>
 
-          <Carousel className=" w-1/2 my-5" setApi={setApi_2}>
-            <CarouselContent>
+          <Carousel className="w-9/12 my-2 " setApi={setApi_2}>
+            <CarouselContent className=" ml-96 w-full h-full overflow-visible ">  
               {images.map((i, index) => (
-                <CarouselItem key={index} className="flex  basis-1/7">
+                <CarouselItem
+                  key={index}
+                   className="basis-1/15"
+                >
                   <Image
                     onClick={() => {
                       setCurrentImageToApi(index);
@@ -141,7 +145,11 @@ function GaleryWithThumbs({
                     src={i.imageUrl}
                     width={1000}
                     height={1000}
-                    className="w-[100px] aspect-square "
+                    className={
+                    currentImageIndex === index
+                      ? "ring-2  p-1  rounded-md flex  w-[200px] aspect-square object-cover "
+                      : "flex w-[100px] aspect-square p-2  rounded-2xl object-cover"
+                  }
                     alt="image from ad"
                   />
                 </CarouselItem>
