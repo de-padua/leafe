@@ -89,7 +89,6 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
     });
 
     const response = await data.json();
-    console.log(response);
     overide(response.data);
   };
 
@@ -127,12 +126,12 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
       api_2.scrollTo(current, true);
       setCurrentImageIndex(current);
 
-      document.body.style.overflow = "hidden"; // lock scroll
+      document.body.style.overflow = "hidden"; 
     } else {
       setCurrent(0);
       setCurrentImageIndex(0);
 
-      document.body.style.overflow = ""; // reset scroll
+      document.body.style.overflow = "";
     }
 
     console.log(current);
@@ -141,7 +140,7 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
     <div className=" ">
       {openGalery ? (
         <div className="fixed inset-0 z-50 bg-white  top-0 overflow-y-auto">
-          <div className=" flex items-center justify-end  mb-5  py-2 px-6 sticky top-0 bg-white z-50">
+          <div className=" flex items-center justify-end  my-5  py-2 px-6 sticky top-0 bg-white z-50">
             <Button
               variant={"outline"}
               className={"cursor-pointer"}
@@ -237,12 +236,12 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
                   <TableRow
                     key={i.id}
                     className=" bg"
-                    onClick={() => {
+                    
+                  >
+                    <TableCell className="h-[70px]  " onClick={() => {
                       setCurrent(index);
                       setOpenGalery(true);
-                    }}
-                  >
-                    <TableCell className="h-[70px]  ">
+                    }}>
                       <div className="relative  h-full">
                         <Image
                           src={i.imageUrl}
@@ -254,12 +253,20 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
                       </div>
                     </TableCell>
 
-                    <TableCell>{i.imageType}</TableCell>
-                    <TableCell>{i.imageSize}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell onClick={() => {
+                      setCurrent(index);
+                      setOpenGalery(true);
+                    }}>{i.imageType}</TableCell>
+                    <TableCell onClick={() => {
+                      setCurrent(index);
+                      setOpenGalery(true);
+                    }}>{i.imageSize}</TableCell>
+                    <TableCell  className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <DotsVerticalIcon />
+                        <DropdownMenuTrigger asChild>
+                          <Button size={"icon"} variant={"outline"}>
+                            <DotsVerticalIcon />
+                          </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
                           <DropdownMenuItem
@@ -269,9 +276,6 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
                           >
                             Remover imagem
                           </DropdownMenuItem>
-                          <DropdownMenuItem>Billing</DropdownMenuItem>
-                          <DropdownMenuItem>Team</DropdownMenuItem>
-                          <DropdownMenuItem>Subscription</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
