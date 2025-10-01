@@ -110,6 +110,7 @@ export class AnuncioService {
         },
         include: {
           imovelImages: true,
+          user:true
         },
       });
       return getPostData;

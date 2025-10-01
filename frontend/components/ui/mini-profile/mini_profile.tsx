@@ -44,12 +44,11 @@ function MiniProfile({ data }: { data: UserWithoutProperties }) {
   }
   return (
     <div className=" rounded-md  border  p-6">
-              <h2 className="text-2xl font-semibold my-5">Falar com o anunciante</h2>
 
       <div className="flex items-start justify-start gap-x-5 h-[100px]">
         <div>
           <Avatar className="h-20 w-20">
-            <AvatarImage src="https://github.com/shadcn.png" />
+            <AvatarImage src="https://github.com/de-padua.png" />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
         </div>

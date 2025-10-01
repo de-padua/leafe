@@ -94,13 +94,14 @@ export class DashboardService {
 
       const offsetCalc = (parseInt(pageOffset) - 1) * 10;
 
+
       const data = await this.prisma.imovel.findMany({
         where: {
           userId,
           type: type ? type : undefined,
           isActive: postIsActive ?? undefined,
         },
-
+      
         skip: offsetCalc ?? 0,
         take: 10,
         orderBy: orderBy.length > 0 ? orderBy : undefined,
@@ -117,6 +118,7 @@ export class DashboardService {
           CEP: true,
           userId: true,
         },
+         
       });
 
       return {
@@ -216,6 +218,7 @@ export class DashboardService {
       },
       include: {
         imovelImages: true,
+        user:true
       },
     });
 
