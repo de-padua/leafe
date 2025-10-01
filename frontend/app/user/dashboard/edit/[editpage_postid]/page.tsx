@@ -3567,10 +3567,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                     </Description>
                   </Header>
                   <Body>
-                    <EditGalery
-                      images={postData.imovelImages}
-                      data={postData}
-                    />
+                    <EditGalery images={postData.imovelImages} />
                     <FormField
                       control={form.control}
                       name="pictures"
