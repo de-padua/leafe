@@ -1,5 +1,13 @@
 "use client";
 import Galery from "@/components/anuncio/galery";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import React, { useEffect, useRef, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +36,7 @@ import {
   InfoIcon,
   LoaderIcon,
   LoaderPinwheel,
+  Pen,
   Shield,
   Theater,
   TreePalmIcon,
@@ -94,11 +103,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCacheStorage } from "@/lib/stores/userPostsCache";
 import { Imovel } from "@/types";
 import { Value } from "@radix-ui/react-select";
 import EditGalery from "@/components/anuncio/edit-galery";
+import { IconArrowLeft } from "@tabler/icons-react";
 
 const formSchema = z
   .object({
@@ -453,16 +463,14 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
     setIsLoading(false);
     setPostCreatedStatus(true);
     overide(isPicturesUploaded.data);
-    setDeleteFiles(true)
-    return
+    setDeleteFiles(true);
+    return;
   }
-
-
 
   const setIsSuccessDeletings = () => {
-    return setDeleteFiles(false)
-  }
-    async function sendPictures(files: FileWithPreview[], postId: string) {
+    return setDeleteFiles(false);
+  };
+  async function sendPictures(files: FileWithPreview[], postId: string) {
     const formData = new FormData();
 
     adFiles.forEach((photo) => {
@@ -2388,9 +2396,44 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
     },
   ];
 
+  const route = useRouter();
   return (
     <div className="w-full ">
       <div className="flex items-center justify-center flex-col  w-full">
+        <div className="w-full flex items-center justify-between mb-10 mt-5 p-0 h-fit">
+          <div className="flex items-center justify-between gap-x-2">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/user/dashboard/imoveis/list/q?page=1">
+                    Dashboard
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/user/dashboard/imoveis/list/q?page=1">
+                    Imóveis
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Visualização</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          <div className="flex items-center justify-center gap-x-2">
+            <Button
+              size={"icon"}
+              variant={"outline"}
+              onClick={() => {
+                route.push("/user/dashboard/imoveis/view/" + postData.postId);
+              }}
+            >
+              <IconArrowLeft />
+            </Button>
+          </div>
+        </div>
         <div className="flex flex-col  lg:py-10 w-full p-5  ">
           <div className="space-y-3 border-b pb-4">
             <h2 className="text-2xl  lg:text-4xl font-semibold">
@@ -3386,7 +3429,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                   className="hidden lg:flex"
                   disabled={isLoading ? true : false}
                 >
-                  Criar novo anúncio{" "}
+                  Salvar mudanças{" "}
                   {isLoading ? (
                     <LoaderIcon className="animate-spin" />
                   ) : (
@@ -3518,9 +3561,9 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                 </div>
                 <Main>
                   <Header>
-                    <Title>Adicione fotos do imóvel</Title>
+                    <Title>Gerencie as imagens do seu anúncio</Title>
                     <Description>
-                      Mostre seu imóvel da melhor forma com fotos de qualidade{" "}
+                      Mostre seu imóvel da melhor forma com fotos de qualidade
                     </Description>
                   </Header>
                   <Body>
@@ -3536,8 +3579,14 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                           <FormControl>
                             <Galery
                               getFiles={getFiles}
-                              postImagesIsFull={postData.imovelImages.length >= 15 ? true : false}
-                              postImagesTotalLenght={postData.imovelImages.length}
+                              postImagesIsFull={
+                                postData.imovelImages.length >= 15
+                                  ? true
+                                  : false
+                              }
+                              postImagesTotalLenght={
+                                postData.imovelImages.length
+                              }
                               deleteFiles={deleteFiles}
                               setIsSuccessDeletings={setIsSuccessDeletings}
                             />
@@ -3553,7 +3602,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                   className="flex lg:hidden"
                   disabled={isLoading ? true : false}
                 >
-                  Criar novo anúncio{" "}
+                  Salvar mudanças
                   {isLoading ? (
                     <LoaderIcon className="animate-spin" />
                   ) : (

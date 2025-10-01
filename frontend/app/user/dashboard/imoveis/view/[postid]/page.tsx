@@ -12,14 +12,25 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import {
+  AreaChartIcon,
   ArrowLeft,
+  BadgeCentIcon,
+  BadgeCheck,
+  BadgeIcon,
   Bath,
   Bed,
+  BedDouble,
+  BedDoubleIcon,
+  Camera,
   Car,
   CheckIcon,
   Eye,
+  Grid2x2,
+  Grid2X2,
   HousePlusIcon,
   ImageIcon,
+  LandPlot,
+  LucideSplinePointer,
   Mail,
   Pen,
   Share,
@@ -28,7 +39,7 @@ import {
   Tv,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb,
@@ -38,20 +49,56 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { IconArrowLeft, IconArrowLeftFromArc } from "@tabler/icons-react";
+import {
+  IconArrowLeft,
+  IconArrowLeftFromArc,
+  IconPool,
+  IconStairs,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardBody } from "@/components/custom/card-user-datas";
 import { useCacheStorage } from "@/lib/stores/userPostsCache";
 import EditGalery from "@/components/anuncio/edit-galery";
 import GaleryWithThumbs from "@/components/anuncio/GaleryWithThumbs";
+import dynamic from "next/dynamic";
+
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
+
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+
+const Circle = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Circle),
+  { ssr: false }
+);
+
+import { useMap } from "react-leaflet";
+
+
+
 export default function page() {
   const params = useParams<{ postid: string }>();
   const route = useRouter();
   const setPost = useCacheStorage((state) => state.add);
+  const [expanded, setExpanded] = useState(false);
   const [hasDetailsState, setHasDetails] = useState(false);
   const [openGalery, setOpenGalery] = useState<boolean>(false);
-
+  const[isLoaded,setIsLoaded] = useState(false)
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["data"],
     queryFn: async () => {
@@ -100,16 +147,7 @@ export default function page() {
     setOpenGalery(false);
   };
 
-  useEffect(() => {
-    if (openGalery) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-  }, [openGalery]);
-
-  const featureLabels: Record<string, string> = {
-    // 🏠 Básico
+  const basicLabels: Record<string, string> = {
     furnished: "Mobiliado",
     pool: "Piscina",
     gym: "Academia",
@@ -137,8 +175,9 @@ export default function page() {
     bikeRack: "Bicicletário",
     coWorkingSpace: "Espaço de Coworking",
     petFriendly: "Pet Friendly",
+  };
 
-    // 🏢 Estrutura
+  const structure: Record<string, string> = {
     concierge: "Portaria",
     backupGenerator: "Gerador de Energia",
     waterReservoir: "Reservatório de Água",
@@ -146,8 +185,9 @@ export default function page() {
     coveredParking: "Estacionamento Coberto",
     visitorParking: "Vagas para Visitantes",
     carWash: "Lava-Rápido",
+  };
 
-    // 🏊‍♂️ Lazer e esportes
+  const lazer: Record<string, string> = {
     sportsCourt: "Quadra Poliesportiva",
     tennisCourt: "Quadra de Tênis",
     squashCourt: "Quadra de Squash",
@@ -165,8 +205,9 @@ export default function page() {
     heatedPool: "Piscina Aquecida",
     indoorPool: "Piscina Coberta",
     kidsPool: "Piscina Infantil",
+  };
 
-    // 🌳 Áreas verdes e sociais
+  const greenArea: Record<string, string> = {
     communityGarden: "Horta Comunitária",
     orchard: "Pomar",
     meditationSpace: "Espaço de Meditação",
@@ -177,8 +218,9 @@ export default function page() {
     outdoorLounge: "Lounge Externo",
     panoramicDeck: "Deck Panorâmico",
     rooftop: "Rooftop",
+  };
 
-    // 🛠️ Conforto e tecnologia
+  const tec: Record<string, string> = {
     centralHeating: "Aquecimento Central",
     centralCooling: "Climatização Central",
     centralVacuum: "Aspirador Central",
@@ -188,15 +230,17 @@ export default function page() {
     soundSystem: "Sistema de Som",
     smartLighting: "Iluminação Inteligente",
     soundProofing: "Isolamento Acústico",
+  };
 
-    // 🛡️ Segurança extra
+  const security: Record<string, string> = {
     securityRoom: "Sala de Segurança",
     qrAccess: "Acesso por QR Code",
     facialRecognition: "Reconhecimento Facial",
     panicButton: "Botão de Pânico",
     automaticGate: "Portão Automático",
+  };
 
-    // 🛎️ Serviços e conveniência
+  const services: Record<string, string> = {
     housekeeping: "Serviço de Limpeza",
     laundryService: "Serviço de Lavanderia",
     coffeeShop: "Cafeteria",
@@ -208,6 +252,23 @@ export default function page() {
     bikeSharing: "Bike Sharing",
     driverLounge: "Lounge de Motoristas",
   };
+
+  useEffect(() => {
+    if (!data) return;
+      
+    setTimeout(() => {
+      setIsLoaded(true)
+    }, 500);
+ 
+    console.log(data);
+    if (openGalery) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [openGalery, data]);
+
+
   if (isLoading) return <div></div>;
   if (isError) return <div></div>;
   if (data === undefined) return <div></div>;
@@ -226,10 +287,9 @@ export default function page() {
       key !== "isActive"
   );
 
-  const hasDetails = details.length > 0;
   return (
     <div className="flex items-center justify-center w-full flex-col px-5 py-7 space-y-4">
-      <div className="w-full flex items-center justify-between">
+      <div className="w-full flex items-center justify-between mb-10 p-0 h-fit">
         <div className="flex items-center justify-between gap-x-2">
           <Breadcrumb>
             <BreadcrumbList>
@@ -252,7 +312,9 @@ export default function page() {
           </Breadcrumb>
         </div>
         <div className="flex items-center justify-center gap-x-2">
-          <Button size={"icon"} variant={"outline"}>
+          <Button size={"icon"} variant={"outline"}  onClick={() => {
+              route.push("/user/dashboard/imoveis/list/q?page=1");
+            }}>
             <IconArrowLeft />
           </Button>
           <Button
@@ -266,96 +328,89 @@ export default function page() {
           </Button>
         </div>
       </div>
-      <div className="w-full"></div>
+   
 
-      <div className="w-full flex items-start justify-between ">
+      <div className="w-full flex items-start justify-between  ">
         <div className="w-2/3">
-          <div className="flex items-center justify-start w-full  ">
-            <h2 className="text-3xl font-semibold grayscale w-full ">
+          <div className="">
+            <h2 className="text-3xl">
               {data.title}{" "}
             </h2>
           </div>
-          <p className="text-sm mb-2 text-muted-foreground">
-            {data.estate} - {data.city} , {data.street} - {data.CEP}
+          <p className="text-muted-foreground">
+            {data.estate} - {data.city}, {data.street}, {data.CEP}
           </p>
         </div>
-        <div className="grayscale">
-          <h2 className="text-3xl font-semibold ">
+        <div className="text-end text-secondary-foreground">
+          <h2 className=" text-3xl font-semibold">
             {formCurrency.format(data.price)}{" "}
           </h2>
           {data.built > 0 ? (
-            <p className="text-sm">
-              {" "}
+            <p className=" text-muted-foreground">
+            
               {formCurrency.format(Math.floor(data.price / data.built))} / m²
             </p>
           ) : null}
         </div>
       </div>
-      <div className="w-full flex items-center justify-center  ">
-        <div className="grid grid-cols-3 gap-2   w-full ">
-          <div className="col-span-2 relative   ">
-            <div onClick={() => {
-                handleOpenImageGaleryWithThumbs();
-              }} className="absolute w-full flex items-center justify-center h-full opacity-0  hover:bg-stone-900/90 hover:opacity-80 transition-all rounded-md p-1 cursor-pointer">
-              <div className="text-center font-semibold  text-white">
-                <p className="">Ver todas as</p>
-                <div className="flex items-center justify-center gap-x-1">
-                  <p>{data.imovelImages.length}</p>
-                  <ImageIcon />
-                </div>
-                <p>Imagens</p>
-              </div>
-            </div>
-            <div
-              className=" w-full   col-span-2 flex items-start justify-start  gap-x-2 h-[400px]   "
-              onClick={() => {
-                handleOpenImageGaleryWithThumbs();
-              }}
-            >
-              <div className="flex items-center justify-center border rounded-md w-full h-full ">
-                <Image
-                  src={data.imovelImages[0].imageUrl}
-                  width={400}
-                  height={400}
-                  alt="imagem"
-                  className="w-full h-full object-cover rounded-md"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-y-2   w-1/6 rounded-md h-[400px] ">
-                {data.imovelImages.map((image, index) => {
-                  return index > 1 ? null : (
-                    <div
-                      className="w-full flex items-center justify-center aspect-square border rounded-md  h-full"
-                      key={image.id}
-                    >
-                      {" "}
-                      <Image
-                        src={image.imageUrl}
-                        width={400}
-                        height={400}
-                        alt="imagem"
-                        className="h-full object-cover rounded-md"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+      <div className="w-full flex items-center justify-center h-[600px]">
+        <div className="grid grid-cols-6 grid-rows-4 w-full h-full gap-2 gap-x-7">
+          {/* Main image - spans all rows */}
+          <div
+            className="col-span-4 row-span-4 relative cursor-pointer"
+            onClick={handleOpenImageGaleryWithThumbs}
+          >
+            <Image
+              src={data.imovelImages[0].imageUrl}
+              fill
+              className="object-cover rounded-md"
+              alt="image from ad"
+            />
           </div>
 
-          {url && (
-            <div className="relative w-full h-full">
-              <iframe
-                src={url}
-                width="100%"
-                height="100%"
-                className="border-0 rounded-md "
-                loading="lazy"
-              />
+          {/* Right column - first image takes 2 rows */}
+          <div
+            className="col-span-2 row-span-2 relative   "
+            onClick={handleOpenImageGaleryWithThumbs}
+          >
+            <div className="absolute w-full h-full z-20 bg-zinc-900/90 opacity-90 rounded-md flex items-center justify-center text-center">
+              <div className="text-lg text-white text-center w-fit ">
+                <div className="flex items-center justify-center">
+                  <Camera />
+                </div>
+                <p className="font-semibold">Mostrar todas </p>
+                <p className="text-sm"> {data.imovelImages.length} imagens</p>
+              </div>
             </div>
-          )}
+            <Image
+              src={data.imovelImages[1].imageUrl}
+              fill
+              className="object-cover blur-[2px] rounded-md"
+              alt="image from ad"
+            />
+          </div>
+
+          {/* Right column - second image takes 2 rows */}
+          <div className="col-span-2 row-span-2 relative  flex items-center justify-center ">
+             <div className="relative w-full h-full">
+              <div className="absolute w-full h-full flex items-center justify-center">
+                    <Image  fill src="/mapsvg.svg" alt="map" className="w-[40px] h-[40px]" />
+              </div>
+              {(
+              <div className="relative w-full flex items-center justify-center h-full  z-10 rounded-md ">
+                <iframe
+                  src={url}
+                  width="100%"
+                  height="100%"
+                  className="border-0 rounded-md h-full z-50 "
+                />
+              </div>
+            )}
+             </div>
+          </div>
         </div>
       </div>
+
       {openGalery && (
         <div className="h-fit">
           <div className="">
@@ -376,96 +431,219 @@ export default function page() {
           />
         </div>
       )}
-      <div className="w-full">
-        <h2 className="text-2xl font-semibold mb-3 mt-6">Descrição</h2>
-        <p
-          className="text-sm"
-          dangerouslySetInnerHTML={{ __html: data.description }}
-        ></p>
-      </div>
 
-      <div className="flex items-start justify-between w-full h-full">
-        <div className="w-2/3">
+      <div className="grid grid-cols-6 w-full gap-x-7 space-y-4">
+        <div className="col-span-4 w-full">
           <div className="w-full">
-            <h2 className="text-2xl font-semibold my-4">Características</h2>
-
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p>Área construída: {data.built} m²</p>
-              <p>Área total do terreno: {data.area} m²</p>
-            </div>
-
-            <h3 className="text-xl font-medium mt-6 mb-2">
-              Detalhes do imóvel
-            </h3>
-
-            <div className="  grid grid-cols-6  gap-2 text-sm text-muted-foreground">
-              <p className="flex items-center justify-start gap-x-1 w-fit">
-                {data.bedrooms}{" "}
-                {data.bedrooms > 1 ? "Dormitórios" : "Dormitório"}{" "}
-                <Bed width={15} height={15} />
-              </p>
-              <p className="flex items-center justify-start gap-x-1 w-fit">
-                {data.garage} Vagas <Car width={15} height={15} />{" "}
-              </p>
-              <p className="flex items-center justify-start gap-x-1 w-fit">
-                {data.bathrooms} Banheiros <Bath width={15} height={15} />{" "}
-              </p>
-              <p className="flex items-center justify-start gap-x-1 w-fit">
-                {data.rooms} Salas <Tv width={15} height={15} />
-              </p>
-              {data.gatedCommunity && (
-                <p className="flex items-center justify-start gap-x-1 w-fit">
-                  Condomínio <HousePlusIcon width={15} height={15} />{" "}
-                </p>
-              )}
+            <p
+              className={`grayscale mb-1 ${expanded ? "" : ""}`}
+              dangerouslySetInnerHTML={{ __html: data.description }}
+            ></p>
+            <div className="flex items-center justify-center w-full">
+            
             </div>
           </div>
+          <div className="flex items-start justify-start w-full h-full">
+            <div className="w-full">
+              <div className="w-full ">
+                <Title>Detalhes da propiedade</Title>
 
-          <div className=" w-full">
-            <h2 className="text-2xl font-semibold mb-3 mt-6">
-              Características Adicionais
-            </h2>
+                <div className="w-full grid grid-cols-2 gap-x-10 gap-y-3 text-sm">
+                  <div className="flex items-center justify-between border-b p-1 ">
+                    <div className="flex items-center justify-start gap-x-1 text-muted-foreground">
+                      <span>
+                        <Grid2x2
+                          size={19}
+                          strokeWidth={1.5}
+                          absoluteStrokeWidth
+                        />
+                      </span>
+                      <p className="">Area total </p>
+                    </div>
+                    <p className="font-semibold">{data.built}/m²</p>
+                  </div>
 
-            <div>
-              {hasDetails && (
-                <div>
-                  <div className="grid grid-cols-4 w-full gap-y-1">
-                    {details.map((key) => (
-                      <p
-                        key={key}
-                        className="text-muted-foreground text-sm flex items-center justify-start gap-x-2"
-                      >
-                        {featureLabels[key] ?? key}{" "}
-                        <CheckIcon width={10} height={10} />{" "}
+                  <div className="flex items-center justify-between border-b p-1 ">
+                    <div className="flex items-center justify-start gap-x-1 text-muted-foreground">
+                      <span>
+                        <Car size={19} strokeWidth={1.5} absoluteStrokeWidth />
+                      </span>
+                      <p >Garagem</p>
+                    </div>
+                    <p className="font-semibold">{data.garage}</p>
+                  </div>
+                  <div className="flex items-center justify-between border-b p-1 ">
+                    <div className="flex items-center justify-start gap-x-1 text-muted-foreground">
+                      <span>
+                        <Bath size={19} strokeWidth={1.5} absoluteStrokeWidth />
+                      </span>
+                      <p >Banheiro</p>
+                    </div>
+                    <p className="font-semibold">{data.bathrooms}</p>
+                  </div>
+                  <div className="flex items-center justify-between border-b p-1 ">
+                    <div className="flex items-center justify-start gap-x-1 text-muted-foreground">
+                      <span>
+                        <BedDoubleIcon
+                          size={19}
+                          strokeWidth={1.5}
+                          absoluteStrokeWidth
+                        />
+                      </span>
+                      <p >Dormitórios</p>
+                    </div>
+                    <p className="font-semibold">{data.rooms} </p>
+                  </div>
+                  <div className="flex items-center justify-between border-b p-1 ">
+                    <div className="flex items-center justify-start gap-x-1 text-muted-foreground">
+                      <span>
+                        <IconStairs size={19} strokeWidth={1.5} />
+                      </span>
+                      <p >
+                        {data.floors > 0 ? "Pisos" : "Piso"}
                       </p>
-                    ))}
+                    </div>
+                    <p className="font-semibold">
+                      {data.floors === 0 ? "Térreo" : data.floors}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between border-b p-1 ">
+                    <div className="flex items-center justify-start gap-x-1 text-muted-foreground">
+                      <span>
+                        <IconPool size={19} strokeWidth={1.5} />
+                      </span>
+                      <p >Piscina</p>
+                    </div>
+                    <p className="font-semibold">
+                      {data.pool_size === 0 ? 1 : data.pool_size}/m²
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-            <div className=" w-full">
-              <h2 className="text-2xl font-semibold mb-3 mt-6">
-                Opções de Financiamento do Imóvel
-              </h2>
-              {data.financeBanks.length > 0 ? (
-                <div>
-                  <div className="grid grid-cols-2 gap-2 w-fit">
-                    {data.financeBanks.map((i) => (
-                      <div key={i} className="text-xs px-2 py-2 w-fit">
-                        {i}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">
-                  Sem opção de financiamento.
-                </p>
-              )}
+              </div>
+
+              <div className=" w-full text-sm">
+                <TrueLabels data={data} title={"Geral"} labels={basicLabels} />
+
+                <TrueLabels data={data} title={"Segurança"} labels={security} />
+
+                <TrueLabels data={data} title={"Serviços"} labels={services} />
+
+                <TrueLabels data={data} title={"Tecnologia"} labels={tec} />
+
+                <TrueLabels data={data} title={"Lazer"} labels={lazer} />
+
+                <TrueLabels
+                  data={data}
+                  title={"Estrutura"}
+                  labels={structure}
+                />
+
+                <TrueLabels data={data} title={"Verde"} labels={greenArea} />
+
+
+                
+              </div>
             </div>
           </div>
+        </div>
+        <div className="col-span-2 w-full">
+          <MiniProfile data={data.user} />
         </div>
       </div>
     </div>
   );
 }
+
+import { cn } from "@/lib/utils";
+import { SizeIcon } from "@radix-ui/react-icons";
+import { object, objectUtil, string } from "zod";
+import { TreeItem } from "react-aria-components";
+import { Avatar } from "@/components/ui/avatar";
+import { AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import MiniProfile from "@/components/ui/mini-profile/mini_profile";
+import Minimap from "@/components/ui/dashboard/minimap/page";
+
+function Title({ className, children, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="TitleSection"
+      className={cn(
+        "text-2xl font-semibold mb-3 mt-6 grayscale-100",
+        className
+      )}
+      {...props}
+    >
+      <h2>{children}</h2>
+    </div>
+  );
+}
+function TrueLabels({
+  data,
+  labels,
+  title,
+}: {
+  data: any;
+  labels: Record<string, string>;
+  title: string;
+}) {
+  const objects: string[] = [];
+  Object.entries(labels).map((i) => {
+    if (data[i[0]] === true) {
+      objects.push(i[1]);
+    }
+  });
+
+  return (
+    <div className="">
+      {objects.length > 0 && (
+        <div className=" rounded-md my-7">
+          <Title className=" border-b pb-2  text-zinc-800"> {title} </Title>
+          <div className="w-full grid grid-cols-2 gap-2 text-muted-foreground ">
+            {objects.map((i, index) => (
+              
+              <p className="flex items-center justify-start" key={index}>
+                {i}{" "}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+
+  
+  /*    <TrueLabels
+  S
+                    data={data}
+                    title={"Segurança"}
+                    labels={security}
+                  />
+
+                  <TrueLabels
+                    data={data}
+                    title={"Serviços"}
+                    labels={services}
+                  />
+
+                  <TrueLabels data={data} title={"Tecnologia"} labels={tec} />
+
+                  <TrueLabels data={data} title={"Lazer"} labels={lazer} />
+
+                  <TrueLabels
+                    data={data}
+                    title={"Estrutura"}
+                    labels={structure}
+                  />
+
+                  <TrueLabels data={data} title={"Verde"} labels={greenArea} /> */
+}
+
+
+
+
+const SimpleMapPlaceholder = ({ width = "100%", height = "500px", color = "#B0B0B0" }) => (
+ <div>
+  
+ </div>
+);

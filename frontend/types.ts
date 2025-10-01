@@ -77,10 +77,11 @@ export type UserWithoutProperties = {
   id: string;
   email: string;
   password?: string;
-  username: string;
   session?: Session | null;
   createdAt: Date;
   imoveisTotalLenght: number;
+  firstName: string;
+  lastName: string;
 };
 
 export enum PropertyType {
