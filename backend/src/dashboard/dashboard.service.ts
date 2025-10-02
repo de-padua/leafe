@@ -218,6 +218,7 @@ export class DashboardService {
       },
       include: {
         imovelImages: true,
+<<<<<<< HEAD
         user: {
           select: {
             id: true, 
@@ -227,6 +228,9 @@ export class DashboardService {
             createdAt:true
           },
         },
+=======
+        user:true
+>>>>>>> b3f996cc52563456d60bd3a060f86a2e73991751
       },
     });
 
