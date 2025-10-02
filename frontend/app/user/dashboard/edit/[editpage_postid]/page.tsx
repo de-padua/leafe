@@ -2488,7 +2488,7 @@ function FormComponent({ postData }: { postData: Imovel }) {
   return (
     <div className="w-full ">
       <div className="flex items-center justify-center flex-col  w-full">
-        <div className="w-full flex items-center justify-between mb-10 mt-5 p-0 h-fit">
+        <div className="w-full flex items-center justify-between mb-6 mt-5 p-0 h-fit">
           <div className="flex items-center justify-between gap-x-2">
             <Breadcrumb>
               <BreadcrumbList>
@@ -2522,7 +2522,7 @@ function FormComponent({ postData }: { postData: Imovel }) {
             </Button>
           </div>
         </div>
-        <div className="flex flex-col  lg:py-10 w-full p-5  ">
+        <div className="flex flex-col w-full  ">
           <div className="space-y-3 border-b pb-4">
             <h2 className="text-2xl  lg:text-4xl font-semibold">
               Edite seu anúncio

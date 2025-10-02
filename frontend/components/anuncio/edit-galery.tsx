@@ -218,6 +218,10 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
         <div>
           <Table
             className="rounded-md border-border w-full h-10 overflow-clip relative"
+<<<<<<< HEAD
+=======
+            divClassname="max-h-[300px] overflow-y-scroll"
+>>>>>>> b3f996cc52563456d60bd3a060f86a2e73991751
           >
             <TableCaption>A list of your recent invoices.</TableCaption>
             <TableHeader className="sticky w-full top-0  z-10  bg-white h-10 border-b-2 border-border rounded-t-md  ">
