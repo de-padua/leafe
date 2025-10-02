@@ -208,7 +208,7 @@ export class DashboardService {
     };
   }
 
-  async getDashboardPostData(postId: string, userId: string) {
+  async getDashboardPostDataById(postId: string, userId: string) {
     const post = await this.prisma.imovel.findFirst({
       where: {
         userId: userId,
@@ -216,6 +216,15 @@ export class DashboardService {
       },
       include: {
         imovelImages: true,
+        user: {
+          select: {
+            id: true, 
+            email: true,
+            firstName:true,
+            lastName:true,
+            createdAt:true
+          },
+        },
       },
     });
 

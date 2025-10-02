@@ -50,13 +50,9 @@ export class DashboardController {
   }
 
   @UseGuards(AuthGuard)
-  @Post()
+  @Get(":postId")
   async GetPostById(
     @Req() request: CustomRequestWithId,
-    @Body()
-    data: {
-      postId: string;
-    },
     @Res({ passthrough: true })
     response: Response,
   ) {
@@ -64,8 +60,8 @@ export class DashboardController {
 
     const userId = request.id;
 
-    const postData = await this.dashboardService.getDashboardPostData(
-      data.postId,
+    const postData = await this.dashboardService.getDashboardPostDataById(
+      request.params.postId,
       userId,
     );
     return postData;

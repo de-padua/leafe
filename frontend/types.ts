@@ -85,9 +85,9 @@ export type UserWithoutProperties = {
 };
 
 export enum PropertyType {
-  AP,
-  HOUSE,
-  LAND,
+  "AP",
+  "HOUSE",
+  "LAND",
 }
 export type Session = {
   id: string;

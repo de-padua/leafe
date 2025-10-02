@@ -19,9 +19,6 @@ import { Button } from "@/components/ui/button";
 import {
   Building,
   CheckCircle,
-  CircleCheck,
-  CpuIcon,
-  DollarSignIcon,
   House,
   HousePlug,
   ImageIcon,
@@ -36,7 +33,6 @@ import {
   Button as AriaButton,
   Input as AriaInput,
   Label,
-  Tree,
 } from "react-aria-components";
 
 import { useForm } from "react-hook-form";
@@ -54,39 +50,8 @@ import { v4 as uuidv4 } from "uuid";
 import { MinimalTiptapEditor } from "@/components/ui/minimal-tiptap";
 import { FileWithPreview } from "@/hooks/use-file-upload";
 import { Checkbox } from "@/components/ui/checkbox";
-import CheckboxCardDemo from "@/components/customized/checkbox/checkbox-11";
-import { fi } from "zod/v4/locales";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
-
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
-);
-
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-
-const Circle = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Circle),
-  { ssr: false }
-);
-
-const useMap = dynamic(
-  () => import("react-leaflet").then((mod) => mod.useMap),
-  { ssr: false }
-);
 
 import {
   Accordion,
@@ -94,7 +59,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { RichTextEditorDemo } from "@/components/tiptap/rich-text-editor";
 
 const formSchema = z
   .object({
@@ -121,25 +85,70 @@ const formSchema = z
     CEP: z.string().length(8, {
       message: "CEP deve ter 8 dígitos no formato XXXXX-XXX",
     }),
-    rooms: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos quartos o imóvel possui.",
-    }),
-    bathrooms: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos banheiros o imóvel possui.",
-    }),
-    garage: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error: "Você precisa selecionar quantas vagas o imóvel possui.",
-    }),
-    bedrooms: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos dormitórios o imóvel possui.",
-    }),
-    floors: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos andares o imóvel possui.",
-    }),
+    rooms: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos quartos o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de quartos deve estar entre 1 e 10" }
+      ),
+
+    bathrooms: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos banheiros o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de banheiros deve estar entre 1 e 10" }
+      ),
+
+    garage: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantas vagas o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de vagas na garagem deve estar entre 1 e 10" }
+      ),
+
+    bedrooms: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos dormitórios o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de dormitórios deve estar entre 1 e 10" }
+      ),
+
+    floors: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos andares o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de andares deve estar entre 1 e 10" }
+      ),
     age: z.coerce
       .number()
       .min(0, {
@@ -161,6 +170,7 @@ const formSchema = z
     type: z.enum(["HOUSE", "AP", "LAND"], {
       required_error: "Você precisa selecionar o tipo de imóvel.",
     }),
+
     area: z.coerce.number().transform((v) => Number(v) || 0),
 
     built: z.coerce.number(),
@@ -309,7 +319,7 @@ function page() {
       estate: "",
       CEP: "",
       log: "",
-      type: undefined,
+      type: "AP",
       rooms: "1",
       bathrooms: "1",
       garage: "1",
@@ -430,8 +440,10 @@ function page() {
   const [cepLoad, setCepLoad] = useState<boolean>(false);
   const [geo, setGeo] = useState<null | { lng: string; lat: string }>(null);
   const [adFiles, setFiles] = useState<FileWithPreview[]>([]);
-  const [adress, setAdress] = useState<string | null>(null);
   const [mapUrl, setMapUrl] = useState("");
+
+
+
   const getUserAdress = async (cep: string) => {
     setCepLoad(true);
     getCoordsByCEP(cep);
@@ -478,7 +490,6 @@ function page() {
   const isGatedComunity = form.watch("gatedCommunity");
   const isFinan = form.watch("isFinan");
   const type = form.watch("type");
-
   const cepRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (ref: React.RefObject<HTMLInputElement | null>) => {
@@ -2474,7 +2485,6 @@ function page() {
     },
   ];
 
-  
   return (
     <div className="">
       <div className="flex items-center justify-center flex-col ">
@@ -3626,7 +3636,7 @@ function page() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Galery getFiles={getFiles}  images={[]}/>
+                            <Galery getFiles={getFiles} images={[]} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -3680,7 +3690,7 @@ function Success() {
           <Link href="/user/dashboard/imovel?page=1">Ver Meus Anúncios</Link>
         </Button>
         <Button asChild>
-          <Link href="/anuncio/novo#" >Criar Outro Anúncio</Link>
+          <Link href="/anuncio/novo#">Criar Outro Anúncio</Link>
         </Button>
       </div>
     </div>
@@ -3731,8 +3741,6 @@ function Body({ className, ...props }: React.ComponentProps<"div">) {
     />
   );
 }
-
-
 
 /**if (isPostCreated) {
     return <Success />;

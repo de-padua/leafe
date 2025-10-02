@@ -1,10 +1,9 @@
-import { RichTextEditorDemo } from "@/components/tiptap/rich-text-editor";
+import React from 'react'
 
-export default function Page() {
-
+function page() {
   return (
-    <div className="mx-auto w-full container flex flex-col justify-center items-center py-5">
-        <RichTextEditorDemo className="w-full rounded-xl"/>
-    </div>
+    <div>page</div>
   )
 }
+
+export default page

@@ -105,10 +105,12 @@ import {
 } from "@/components/ui/accordion";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCacheStorage } from "@/lib/stores/userPostsCache";
-import { Imovel } from "@/types";
+import { Imovel, PropertyType } from "@/types";
 import { Value } from "@radix-ui/react-select";
 import EditGalery from "@/components/anuncio/edit-galery";
 import { IconArrowLeft } from "@tabler/icons-react";
+import { useQuery } from "@tanstack/react-query";
+import { description } from "@/components/chart-area-interactive";
 
 const formSchema = z
   .object({
@@ -135,25 +137,70 @@ const formSchema = z
     CEP: z.string().length(8, {
       message: "CEP deve ter 8 dígitos no formato XXXXX-XXX",
     }),
-    rooms: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos quartos o imóvel possui.",
-    }),
-    bathrooms: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos banheiros o imóvel possui.",
-    }),
-    garage: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error: "Você precisa selecionar quantas vagas o imóvel possui.",
-    }),
-    bedrooms: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos dormitórios o imóvel possui.",
-    }),
-    floors: z.enum(["0", "1", "2", "3", "4", "5"], {
-      required_error:
-        "Você precisa selecionar quantos andares o imóvel possui.",
-    }),
+    rooms: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos quartos o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de quartos deve estar entre 1 e 10" }
+      ),
+
+    bathrooms: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos banheiros o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de banheiros deve estar entre 1 e 10" }
+      ),
+
+    garage: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantas vagas o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de vagas na garagem deve estar entre 1 e 10" }
+      ),
+
+    bedrooms: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos dormitórios o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de dormitórios deve estar entre 1 e 10" }
+      ),
+
+    floors: z
+      .string({
+        required_error:
+          "Você precisa selecionar quantos andares o imóvel possui.",
+      })
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 0 && num <= 10;
+        },
+        { message: "O número de andares deve estar entre 1 e 10" }
+      ),
     age: z.coerce
       .number()
       .min(0, {
@@ -176,7 +223,9 @@ const formSchema = z
       required_error: "Você precisa selecionar o tipo de imóvel.",
     }),
     area: z.coerce.number().transform((v) => Number(v) || 0),
+
     built: z.coerce.number(),
+
     financeBanks: z.array(z.string()),
     pool_size: z.coerce.number().optional(),
     gatedCommunity_price: z.coerce.number(),
@@ -208,6 +257,7 @@ const formSchema = z
     bikeRack: z.boolean(),
     coWorkingSpace: z.boolean(),
     petFriendly: z.boolean(),
+    /* 🏢 Estrutura */
     concierge: z.boolean(),
     backupGenerator: z.boolean(),
     waterReservoir: z.boolean(),
@@ -215,6 +265,8 @@ const formSchema = z
     coveredParking: z.boolean(),
     visitorParking: z.boolean(),
     carWash: z.boolean(),
+
+    /* 🏊‍♂️ Lazer e esportes */
     sportsCourt: z.boolean(),
     tennisCourt: z.boolean(),
     squashCourt: z.boolean(),
@@ -232,6 +284,8 @@ const formSchema = z
     heatedPool: z.boolean(),
     indoorPool: z.boolean(),
     kidsPool: z.boolean(),
+
+    /* 🌳 Áreas verdes e sociais */
     communityGarden: z.boolean(),
     orchard: z.boolean(),
     meditationSpace: z.boolean(),
@@ -242,6 +296,8 @@ const formSchema = z
     outdoorLounge: z.boolean(),
     panoramicDeck: z.boolean(),
     rooftop: z.boolean(),
+
+    /* 🛠️ Conforto e tecnologia */
     centralHeating: z.boolean(),
     centralCooling: z.boolean(),
     centralVacuum: z.boolean(),
@@ -251,11 +307,15 @@ const formSchema = z
     soundSystem: z.boolean(),
     smartLighting: z.boolean(),
     soundProofing: z.boolean(),
+
+    /* 🛡️ Segurança extra */
     securityRoom: z.boolean(),
     qrAccess: z.boolean(),
     facialRecognition: z.boolean(),
     panicButton: z.boolean(),
     automaticGate: z.boolean(),
+
+    /* 🛎️ Serviços e conveniência */
     housekeeping: z.boolean(),
     laundryService: z.boolean(),
     coffeeShop: z.boolean(),
@@ -266,7 +326,9 @@ const formSchema = z
     carSharing: z.boolean(),
     bikeSharing: z.boolean(),
     driverLounge: z.boolean(),
-    pictures: z.array(z.any()),
+    pictures: z
+      .array(z.any())
+      .min(0, { message: "Envie pelo menos uma foto." }),
   })
   .superRefine((data, ctx) => {
     if (data.type === "HOUSE" && !data.area && !data.built) {
@@ -297,56 +359,71 @@ const formSchema = z
     }
   });
 
-export type CustomImovel = Omit<
-  Imovel,
-  "rooms" | "bathrooms" | "bedrooms" | "garage" | "floors"
-> & {
-  rooms: string;
-  bathrooms: string;
-  bedrooms: string;
-  garage: string;
-  floors: string;
-  pictures: [];
-};
-
 function page() {
   const params = useParams<{ editpage_postid: string }>();
 
-  const postData = useCacheStorage((state) =>
-    state.history.find((i) => i.id === params.editpage_postid)
-  );
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["data"],
+    queryFn: async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/dashboard/${params.editpage_postid}`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-  if (!postData) return <div>...</div>;
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw error;
+          }
+          const errorData = await response.json().catch(() => null);
 
-  const newPostdata: CustomImovel = {
-    ...postData,
-    rooms: postData?.rooms.toString(),
-    bathrooms: postData.bathrooms.toString(),
-    bedrooms: postData.bedrooms.toString(),
-    garage: postData.garage.toString(),
-    floors: postData.floors.toString(),
+          throw new Error(
+            errorData?.message || `HTTP error! status: ${response.status}`
+          );
+        }
 
-    pictures: [],
-  };
+        const data: Imovel = await response.json();
 
-  console.log(postData);
+        return data;
+      } catch (err) {
+        throw err;
+      }
+    },
+  });
+  if (!data) return <div>...</div>;
 
   return (
     <div>
-      <FormComponent postData={newPostdata} />
+      <FormComponent postData={data} />
     </div>
   );
 }
 export default page;
 
-function FormComponent({ postData }: { postData: CustomImovel }) {
+function FormComponent({ postData }: { postData: Imovel }) {
   const params = useParams<{ editpage_postid: string }>();
 
   const overide = useCacheStorage((state) => state.overide);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { ...postData },
+    defaultValues: {
+      ...postData,
+      type: "AP",
+      rooms: postData.rooms.toString(),
+      bathrooms: postData.bathrooms.toString(),
+      bedrooms: postData.bedrooms.toString(),
+      garage: postData.garage.toString(),
+      floors: postData.floors.toString(),
+      pictures: postData.imovelImages,
+    },
   });
+
   const [deleteFiles, setDeleteFiles] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isPostCreated, setPostCreatedStatus] = useState(false);
@@ -355,6 +432,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
   const [adFiles, setFiles] = useState<FileWithPreview[]>([]);
   const [adress, setAdress] = useState<string | null>(null);
   const [mapUrl, setMapUrl] = useState("");
+
   const getUserAdress = async (cep: string) => {
     setCepLoad(true);
     getCoordsByCEP(cep);
@@ -416,6 +494,11 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (adFiles.length === 0 && postData.imovelImages.length === 0) {
+      form.setError("root", {
+        message: "Envie pelo menos uma foto",
+      });
+    }
     setIsLoading(true);
 
     const { pictures, ...body } = values;
@@ -428,6 +511,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
       garage: Number(values.garage),
       bedrooms: Number(values.bedrooms),
       floors: Number(values.floors),
+    
     };
 
     const data = await fetch(`http://localhost:5000/anuncio`, {
@@ -449,20 +533,23 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
       return;
     }
 
-    const isPicturesUploaded = await sendPictures(adFiles, postData.postId);
+    if (adFiles.length > 0) {
+      const isPicturesUploaded = await sendPictures(adFiles, postData.postId);
 
-    if (isPicturesUploaded.success !== true) {
-      form.setError("root", {
-        message: "Erro ao enviar imagens. Tente novamente.",
-      });
+      if (isPicturesUploaded.success !== true) {
+        form.setError("root", {
+          message: "Erro ao enviar imagens. Tente novamente.",
+        });
 
-      setIsLoading(false);
-      return;
+        setIsLoading(false);
+        setPostCreatedStatus(true);
+        setDeleteFiles(true);
+        return;
+      }
     }
 
     setIsLoading(false);
     setPostCreatedStatus(true);
-    overide(isPicturesUploaded.data);
     setDeleteFiles(true);
     return;
   }
@@ -473,6 +560,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
   async function sendPictures(files: FileWithPreview[], postId: string) {
     const formData = new FormData();
 
+    if (adFiles.length === 0) return;
     adFiles.forEach((photo) => {
       formData.append("files", photo.file as File);
       formData.append("id", postId);
@@ -3559,6 +3647,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                     </div>
                   )}
                 </div>
+
                 <Main>
                   <Header>
                     <Title>Gerencie as imagens do seu anúncio</Title>
@@ -3567,10 +3656,7 @@ function FormComponent({ postData }: { postData: CustomImovel }) {
                     </Description>
                   </Header>
                   <Body>
-                    <EditGalery
-                      images={postData.imovelImages}
-                      data={postData}
-                    />
+                    <EditGalery images={postData.imovelImages} />
                     <FormField
                       control={form.control}
                       name="pictures"
@@ -3648,13 +3734,15 @@ function Success() {
   );
 }
 
-function Main({ className, ...props }: React.ComponentProps<"div">) {
+function Main({ className, children, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot=""
       className={cn("w-full p-2 rounded-md  ", className)}
       {...props}
-    />
+    >
+      {children}
+    </div>
   );
 }
 
@@ -3665,13 +3753,15 @@ function LoaderCustom({ className, ...props }: React.ComponentProps<"div">) {
 function Header({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="" className={cn("my-2", className)} {...props} />;
 }
-function Title({ className, ...props }: React.ComponentProps<"h2">) {
+function Title({ className, children, ...props }: React.ComponentProps<"h2">) {
   return (
     <div
       data-slot=""
       className={cn("text-2xl font-semibold", className)}
       {...props}
-    />
+    >
+      {children}
+    </div>
   );
 }
 function Description({ className, ...props }: React.ComponentProps<"p">) {
@@ -3683,13 +3773,15 @@ function Description({ className, ...props }: React.ComponentProps<"p">) {
     />
   );
 }
-function Body({ className, ...props }: React.ComponentProps<"div">) {
+function Body({ className, children, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot=""
       className={cn("my-2 p-4 border rounded-md shadow-xs   ", className)}
       {...props}
-    />
+    >
+      {children}
+    </div>
   );
 }
 

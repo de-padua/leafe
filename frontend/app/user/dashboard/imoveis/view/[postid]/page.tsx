@@ -89,8 +89,6 @@ const Circle = dynamic(
 
 import { useMap } from "react-leaflet";
 
-
-
 export default function page() {
   const params = useParams<{ postid: string }>();
   const route = useRouter();
@@ -98,19 +96,22 @@ export default function page() {
   const [expanded, setExpanded] = useState(false);
   const [hasDetailsState, setHasDetails] = useState(false);
   const [openGalery, setOpenGalery] = useState<boolean>(false);
-  const[isLoaded,setIsLoaded] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["data"],
     queryFn: async () => {
       try {
-        const response = await fetch(`http://localhost:5000/dashboard`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ postId: params.postid }),
-        });
+        const response = await fetch(
+          `http://localhost:5000/dashboard/${params.postid}`,
+          {
+            method: "GET",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -255,11 +256,11 @@ export default function page() {
 
   useEffect(() => {
     if (!data) return;
-      
+
     setTimeout(() => {
-      setIsLoaded(true)
+      setIsLoaded(true);
     }, 500);
- 
+
     console.log(data);
     if (openGalery) {
       document.body.style.overflow = "hidden";
@@ -267,7 +268,6 @@ export default function page() {
       document.body.style.overflow = "";
     }
   }, [openGalery, data]);
-
 
   if (isLoading) return <div></div>;
   if (isError) return <div></div>;
@@ -312,9 +312,13 @@ export default function page() {
           </Breadcrumb>
         </div>
         <div className="flex items-center justify-center gap-x-2">
-          <Button size={"icon"} variant={"outline"}  onClick={() => {
+          <Button
+            size={"icon"}
+            variant={"outline"}
+            onClick={() => {
               route.push("/user/dashboard/imoveis/list/q?page=1");
-            }}>
+            }}
+          >
             <IconArrowLeft />
           </Button>
           <Button
@@ -328,14 +332,11 @@ export default function page() {
           </Button>
         </div>
       </div>
-   
 
       <div className="w-full flex items-start justify-between  ">
         <div className="w-2/3">
           <div className="">
-            <h2 className="text-3xl">
-              {data.title}{" "}
-            </h2>
+            <h2 className="text-3xl">{data.title} </h2>
           </div>
           <p className="text-muted-foreground">
             {data.estate} - {data.city}, {data.street}, {data.CEP}
@@ -347,7 +348,6 @@ export default function page() {
           </h2>
           {data.built > 0 ? (
             <p className=" text-muted-foreground">
-            
               {formCurrency.format(Math.floor(data.price / data.built))} / m²
             </p>
           ) : null}
@@ -392,21 +392,26 @@ export default function page() {
 
           {/* Right column - second image takes 2 rows */}
           <div className="col-span-2 row-span-2 relative  flex items-center justify-center ">
-             <div className="relative w-full h-full">
+            <div className="relative w-full h-full">
               <div className="absolute w-full h-full flex items-center justify-center">
-                    <Image  fill src="/mapsvg.svg" alt="map" className="w-[40px] h-[40px]" />
-              </div>
-              {(
-              <div className="relative w-full flex items-center justify-center h-full  z-10 rounded-md ">
-                <iframe
-                  src={url}
-                  width="100%"
-                  height="100%"
-                  className="border-0 rounded-md h-full z-50 "
+                <Image
+                  fill
+                  src="/mapsvg.svg"
+                  alt="map"
+                  className="w-[40px] h-[40px]"
                 />
               </div>
-            )}
-             </div>
+              {
+                <div className="relative w-full flex items-center justify-center h-full  z-10 rounded-md ">
+                  <iframe
+                    src={url}
+                    width="100%"
+                    height="100%"
+                    className="border-0 rounded-md h-full z-50 "
+                  />
+                </div>
+              }
+            </div>
           </div>
         </div>
       </div>
@@ -439,9 +444,7 @@ export default function page() {
               className={`grayscale mb-1 ${expanded ? "" : ""}`}
               dangerouslySetInnerHTML={{ __html: data.description }}
             ></p>
-            <div className="flex items-center justify-center w-full">
-            
-            </div>
+            <div className="flex items-center justify-center w-full"></div>
           </div>
           <div className="flex items-start justify-start w-full h-full">
             <div className="w-full">
@@ -468,7 +471,7 @@ export default function page() {
                       <span>
                         <Car size={19} strokeWidth={1.5} absoluteStrokeWidth />
                       </span>
-                      <p >Garagem</p>
+                      <p>Garagem</p>
                     </div>
                     <p className="font-semibold">{data.garage}</p>
                   </div>
@@ -477,7 +480,7 @@ export default function page() {
                       <span>
                         <Bath size={19} strokeWidth={1.5} absoluteStrokeWidth />
                       </span>
-                      <p >Banheiro</p>
+                      <p>Banheiro</p>
                     </div>
                     <p className="font-semibold">{data.bathrooms}</p>
                   </div>
@@ -490,7 +493,7 @@ export default function page() {
                           absoluteStrokeWidth
                         />
                       </span>
-                      <p >Dormitórios</p>
+                      <p>Dormitórios</p>
                     </div>
                     <p className="font-semibold">{data.rooms} </p>
                   </div>
@@ -499,9 +502,7 @@ export default function page() {
                       <span>
                         <IconStairs size={19} strokeWidth={1.5} />
                       </span>
-                      <p >
-                        {data.floors > 0 ? "Pisos" : "Piso"}
-                      </p>
+                      <p>{data.floors > 0 ? "Pisos" : "Piso"}</p>
                     </div>
                     <p className="font-semibold">
                       {data.floors === 0 ? "Térreo" : data.floors}
@@ -512,7 +513,7 @@ export default function page() {
                       <span>
                         <IconPool size={19} strokeWidth={1.5} />
                       </span>
-                      <p >Piscina</p>
+                      <p>Piscina</p>
                     </div>
                     <p className="font-semibold">
                       {data.pool_size === 0 ? 1 : data.pool_size}/m²
@@ -539,9 +540,6 @@ export default function page() {
                 />
 
                 <TrueLabels data={data} title={"Verde"} labels={greenArea} />
-
-
-                
               </div>
             </div>
           </div>
@@ -600,7 +598,6 @@ function TrueLabels({
           <Title className=" border-b pb-2  text-zinc-800"> {title} </Title>
           <div className="w-full grid grid-cols-2 gap-2 text-muted-foreground ">
             {objects.map((i, index) => (
-              
               <p className="flex items-center justify-start" key={index}>
                 {i}{" "}
               </p>
@@ -611,8 +608,6 @@ function TrueLabels({
     </div>
   );
 
-
-  
   /*    <TrueLabels
   S
                     data={data}
@@ -639,11 +634,8 @@ function TrueLabels({
                   <TrueLabels data={data} title={"Verde"} labels={greenArea} /> */
 }
 
-
-
-
-const SimpleMapPlaceholder = ({ width = "100%", height = "500px", color = "#B0B0B0" }) => (
- <div>
-  
- </div>
-);
+const SimpleMapPlaceholder = ({
+  width = "100%",
+  height = "500px",
+  color = "#B0B0B0",
+}) => <div></div>;
