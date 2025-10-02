@@ -121,21 +121,28 @@ export class AnuncioService {
   }
 
   async deleteImage(imageId: string, imovelId: string, userId: string) {
-    console.log(imageId,imovelId)
-    await this.prisma.imovelImages.delete({
-      where: {
-        id: imageId,
-      }
-    });
+      await this.prisma.imovelImages.delete({
+        where: {
+          id: imageId,
+        }
+      });
 
-    const updatedImoveil = await this.prisma.imovel.findFirst({
+    const updatedImovel = await this.prisma.imovel.findFirst({
       where: {
         id: imovelId,
       },
       include: {
         imovelImages: true,
+        user:{
+           select:{
+            firstName:true,
+            lastName:true,
+            createdAt:true,
+            id:true
+           }
+        }
       },
     });
-    return updatedImoveil;
+    return updatedImovel;
   }
 }
