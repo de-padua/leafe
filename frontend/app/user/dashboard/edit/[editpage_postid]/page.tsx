@@ -92,11 +92,6 @@ const Circle = dynamic(
   { ssr: false }
 );
 
-const useMap = dynamic(
-  () => import("react-leaflet").then((mod) => mod.useMap),
-  { ssr: false }
-);
-
 import {
   Accordion,
   AccordionContent,
@@ -105,12 +100,13 @@ import {
 } from "@/components/ui/accordion";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCacheStorage } from "@/lib/stores/userPostsCache";
-import { Imovel, PropertyType } from "@/types";
+import { Imovel, ImovelImages, PropertyType } from "@/types";
 import { Value } from "@radix-ui/react-select";
 import EditGalery from "@/components/anuncio/edit-galery";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { description } from "@/components/chart-area-interactive";
+import { useDashboardStore } from "@/lib/stores/dashboardStore";
 
 const formSchema = z
   .object({
@@ -362,10 +358,21 @@ const formSchema = z
 function page() {
   const params = useParams<{ editpage_postid: string }>();
 
+  const currentPostDashboardStore = useDashboardStore(
+    (state) => state.currentPost
+  );
+  const currentPostImages = useDashboardStore((state) => state.currentImages);
+  const setDashboardCurrent = useDashboardStore((state) => state.set);
+  const setDashboardCurrentImages = useDashboardStore(
+    (state) => state.setImages
+  );
+
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["data"],
     queryFn: async () => {
       try {
+       
+
         const response = await fetch(
           `http://localhost:5000/dashboard/${params.editpage_postid}`,
           {
@@ -390,26 +397,40 @@ function page() {
 
         const data: Imovel = await response.json();
 
+
+
+        setDashboardCurrentImages(data.imovelImages);  /// images are here
+        setDashboardCurrent(data);
+
         return data;
       } catch (err) {
         throw err;
       }
     },
+    enabled: currentPostDashboardStore === null, 
+    
+    initialData: currentPostDashboardStore ?? undefined,
   });
+
   if (!data) return <div>...</div>;
 
   return (
     <div>
-      <FormComponent postData={data} />
+      <FormComponent postData={data} images={currentPostImages} />
     </div>
   );
 }
 export default page;
 
-function FormComponent({ postData }: { postData: Imovel }) {
+function FormComponent({
+  postData,
+  images,
+}: {
+  postData: Imovel;
+  images: ImovelImages[];
+}) {
   const params = useParams<{ editpage_postid: string }>();
 
-  const overide = useCacheStorage((state) => state.overide);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -511,7 +532,6 @@ function FormComponent({ postData }: { postData: Imovel }) {
       garage: Number(values.garage),
       bedrooms: Number(values.bedrooms),
       floors: Number(values.floors),
-    
     };
 
     const data = await fetch(`http://localhost:5000/anuncio`, {
@@ -3656,7 +3676,7 @@ function FormComponent({ postData }: { postData: Imovel }) {
                     </Description>
                   </Header>
                   <Body>
-                    <EditGalery images={postData.imovelImages} />
+                    <EditGalery images={images} />
                     <FormField
                       control={form.control}
                       name="pictures"

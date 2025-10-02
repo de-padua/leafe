@@ -58,41 +58,33 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CardBody } from "@/components/custom/card-user-datas";
-import { useCacheStorage } from "@/lib/stores/userPostsCache";
 import EditGalery from "@/components/anuncio/edit-galery";
 import GaleryWithThumbs from "@/components/anuncio/GaleryWithThumbs";
 import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
+import { SizeIcon } from "@radix-ui/react-icons";
+import { object, objectUtil, string } from "zod";
+import { TreeItem } from "react-aria-components";
+import { Avatar } from "@/components/ui/avatar";
+import { AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import MiniProfile from "@/components/ui/mini-profile/mini_profile";
+import Minimap from "@/components/ui/dashboard/minimap/page";
+import {
+  useDashboardStore,
+} from "@/lib/stores/dashboardStore";
 
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
-
-const Marker = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
-);
-
-const MapContainer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-
-const TileLayer = dynamic(
-  () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-
-const Circle = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Circle),
-  { ssr: false }
-);
-
-import { useMap } from "react-leaflet";
 
 export default function page() {
   const params = useParams<{ postid: string }>();
   const route = useRouter();
-  const setPost = useCacheStorage((state) => state.add);
+
+  const currentPostDashboardStore = useDashboardStore(
+    (state) => state.currentPost
+  );
+  const setCurrentPostDashboardStore = useDashboardStore(
+    (state) => state.set
+  );
+
   const [expanded, setExpanded] = useState(false);
   const [hasDetailsState, setHasDetails] = useState(false);
   const [openGalery, setOpenGalery] = useState<boolean>(false);
@@ -102,6 +94,9 @@ export default function page() {
     queryKey: ["data"],
     queryFn: async () => {
       try {
+        if (currentPostDashboardStore !== null)
+          return currentPostDashboardStore;
+
         const response = await fetch(
           `http://localhost:5000/dashboard/${params.postid}`,
           {
@@ -124,10 +119,13 @@ export default function page() {
           );
         }
 
-        const data: Imovel = await response.json();
+        const data:{
+          success:boolean,
+          data:Imovel
+        } = await response.json();
 
-        setPost(data);
-
+        setCurrentPostDashboardStore(data.data);
+   
         return data;
       } catch (err) {
         throw err;
@@ -552,14 +550,7 @@ export default function page() {
   );
 }
 
-import { cn } from "@/lib/utils";
-import { SizeIcon } from "@radix-ui/react-icons";
-import { object, objectUtil, string } from "zod";
-import { TreeItem } from "react-aria-components";
-import { Avatar } from "@/components/ui/avatar";
-import { AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-import MiniProfile from "@/components/ui/mini-profile/mini_profile";
-import Minimap from "@/components/ui/dashboard/minimap/page";
+
 
 function Title({ className, children, ...props }: React.ComponentProps<"div">) {
   return (

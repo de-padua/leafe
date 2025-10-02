@@ -8,7 +8,6 @@ import { Checkbox } from "../ui/checkbox";
 import { IconArrowLeftTail, IconArrowLeftToArc } from "@tabler/icons-react";
 import { ScrollArea } from "../ui/scroll-area";
 import EXIF from "exif-js";
-import { CustomImovel } from "@/app/user/dashboard/edit/[editpage_postid]/page";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,21 +58,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDashboardStore } from "@/lib/stores/dashboardStore";
 
 type Metadata = {
   [key: string]: string | number;
 };
 function EditGalery({ images }: { images: ImovelImages[] }) {
-  const [openGalery, setOpenGalery] = useState<boolean>(false);
+  console.log(images);
+  const currentPostDashboardStore = useDashboardStore(
+    (state) => state.currentPost
+  );
+  const setImagesDashboard = useDashboardStore((state) => state.setImages);
 
+  const [openGalery, setOpenGalery] = useState<boolean>(false);
   const [currentImage, setCurrentImage] = useState<ImovelImages | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [current, setCurrent] = React.useState(0);
 
   const [api, setApi] = React.useState<CarouselApi>();
   const [api_2, setApi_2] = React.useState<CarouselApi>();
-
-  const overide = useCacheStorage((state) => state.overide);
 
   const handleDeleteImage = async (id: string, imovelId: string) => {
     const data = await fetch(`http://localhost:5000/anuncio/pictures`, {
@@ -88,15 +91,13 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
       }),
     });
 
-    const response = await data.json();
-    overide(response.data);
-  };
+    const response: {
+      success: boolean;
+      data: Imovel;
+    } = await data.json();
 
-  const handleOpenGalery = (imovel: ImovelImages, index: number) => {
-    setCurrent(index);
-    setOpenGalery(true);
+    setImagesDashboard(response.data.imovelImages);
   };
-
   const setCurrentImageToApi = (index: number) => {
     if (!api) {
       return;
@@ -126,7 +127,7 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
       api_2.scrollTo(current, true);
       setCurrentImageIndex(current);
 
-      document.body.style.overflow = "hidden"; 
+      document.body.style.overflow = "hidden";
     } else {
       setCurrent(0);
       setCurrentImageIndex(0);
@@ -134,8 +135,8 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
       document.body.style.overflow = "";
     }
 
-    console.log(current);
-  }, [openGalery, api]);
+    console.log(currentPostDashboardStore);
+  }, [openGalery, api, currentPostDashboardStore]);
   return (
     <div className=" ">
       {openGalery ? (
@@ -218,12 +219,8 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
         <div>
           <Table
             className="rounded-md border-border w-full h-10 overflow-clip relative"
-<<<<<<< HEAD
-=======
             divClassname="max-h-[300px] overflow-y-scroll"
->>>>>>> b3f996cc52563456d60bd3a060f86a2e73991751
           >
-            <TableCaption>A list of your recent invoices.</TableCaption>
             <TableHeader className="sticky w-full top-0  z-10  bg-white h-10 border-b-2 border-border rounded-t-md  ">
               <TableRow>
                 <TableHead className="w-[80px]">Imagem</TableHead>
@@ -236,15 +233,14 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
             <TableBody>
               {images.map((i, index) => {
                 return (
-                  <TableRow
-                    key={i.id}
-                    className=" bg"
-                    
-                  >
-                    <TableCell className="h-[70px]  " onClick={() => {
-                      setCurrent(index);
-                      setOpenGalery(true);
-                    }}>
+                  <TableRow key={i.id} className=" bg">
+                    <TableCell
+                      className="h-[70px]  "
+                      onClick={() => {
+                        setCurrent(index);
+                        setOpenGalery(true);
+                      }}
+                    >
                       <div className="relative  h-full">
                         <Image
                           src={i.imageUrl}
@@ -256,15 +252,23 @@ function EditGalery({ images }: { images: ImovelImages[] }) {
                       </div>
                     </TableCell>
 
-                    <TableCell onClick={() => {
-                      setCurrent(index);
-                      setOpenGalery(true);
-                    }}>{i.imageType}</TableCell>
-                    <TableCell onClick={() => {
-                      setCurrent(index);
-                      setOpenGalery(true);
-                    }}>{i.imageSize}</TableCell>
-                    <TableCell  className="text-right">
+                    <TableCell
+                      onClick={() => {
+                        setCurrent(index);
+                        setOpenGalery(true);
+                      }}
+                    >
+                      {i.imageType}
+                    </TableCell>
+                    <TableCell
+                      onClick={() => {
+                        setCurrent(index);
+                        setOpenGalery(true);
+                      }}
+                    >
+                      {(i.imageSize / 1024).toFixed(2)} KB
+                    </TableCell>
+                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size={"icon"} variant={"outline"}>
