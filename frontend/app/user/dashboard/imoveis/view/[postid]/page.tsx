@@ -99,6 +99,7 @@ export default function page() {
   const [hasDetailsState, setHasDetails] = useState(false);
   const [openGalery, setOpenGalery] = useState<boolean>(false);
   const[isLoaded,setIsLoaded] = useState(false)
+  
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["data"],
     queryFn: async () => {
